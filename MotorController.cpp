@@ -14,7 +14,7 @@
 #include <chrono>
 #include <thread>
 #include <fstream>
-
+#include "tcpServer.h"
 // axisBorders[0].left = -60;
 // axisBorders[0].right = 300;
 // axisBorders[0].home = 120;
@@ -120,7 +120,10 @@ std::cout<<"333 \n";
     }
     isThereMovementToSpecificAngle[currentAxis] = false;
     ++currentMovementID[currentAxis];
-    std::cout << "cur id0 = " << currentMovementID[currentAxis] << std::endl;
+
+    ++personControllingAxis[currentAxis]->room_.name_to_id[std::string(personControllingAxis[currentAxis]->nickname_.data())];
+    
+    std::cout << "cur id0 = " << personControllingAxis[currentAxis]->room_.name_to_id[std::string(personControllingAxis[currentAxis]->nickname_.data())]<< std::endl;
     
 }
 

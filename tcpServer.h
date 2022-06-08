@@ -80,12 +80,12 @@ public:
 	void broadcast(std::array<char, MAX_IP_PACK_SIZE>& msg, std::shared_ptr<participant> participant);
 
 	std::string getNickname(std::shared_ptr<participant> participant);
-
+	std::unordered_map<std::string, int> name_to_id;
 private:
 	enum { max_recent_msgs = 100 };
 	std::unordered_set<std::shared_ptr<participant>> participants_;
 	std::unordered_map<std::shared_ptr<participant>, std::string> name_table_;
-	std::unordered_map<std::string, int> name_to_id;
+
 	std::deque<std::array<char, MAX_IP_PACK_SIZE>> recent_msgs_;
 };
 
@@ -103,8 +103,8 @@ public:
 
 	void start();
 	void onMessage(std::array<char, MAX_IP_PACK_SIZE>& msg);
-
-
+	chatRoom& room_;
+		std::array<char, MAX_NICKNAME> nickname_;
 	//std::vector<int> angles;
 private:
 	void nicknameHandler(const boost::system::error_code& error);
@@ -114,8 +114,9 @@ private:
 
 	tcp::socket socket_;
 	boost::asio::io_service::strand& strand_;
-	chatRoom& room_;
-	std::array<char, MAX_NICKNAME> nickname_;
+
+
+
 	std::array<char, MAX_IP_PACK_SIZE> read_msg_;
 	std::deque<std::array<char, MAX_IP_PACK_SIZE> > write_msgs_;
 	MotorController* motorController_;
@@ -137,7 +138,7 @@ public:
 	CommandTypes detectCommandType(std::array<char, MAX_IP_PACK_SIZE>& read_msg_);
 	bool parseCommandMove(std::array<char, MAX_IP_PACK_SIZE> &read_msg_, std::array<int, NUMBER_OF_ANGLES> &angles, int & axis, int& ID);
 	bool parseCommandMoveID(std::array<char, MAX_IP_PACK_SIZE> &read_msg_, int &axis);
-
+bool removeSomeTrash(std::array<char, MAX_IP_PACK_SIZE> &read_msg_);
 };
 
 

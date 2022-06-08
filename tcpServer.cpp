@@ -10,6 +10,7 @@ void chatRoom::enter(std::shared_ptr<participant> participant, const std::string
 {
 	participants_.insert(participant);
 	name_table_[participant] = nickname;
+	name_to_id[nickname] = 0;
 	std::for_each(recent_msgs_.begin(), recent_msgs_.end(),
 				  boost::bind(&participant::onMessage, participant, _1));
 }
@@ -51,6 +52,8 @@ personInRoom::personInRoom(boost::asio::io_service &io_service,
 						   MotorController *motorController)
 	: socket_(io_service), strand_(strand), room_(room), motorController_(motorController)
 {
+
+	// memset(read_msg_.data(), '\0', MAX_IP_PACK_SIZE);
 }
 
 void personInRoom::start()
@@ -94,6 +97,8 @@ void personInRoom::nicknameHandler(const boost::system::error_code &error)
 
 stringParser::CommandTypes stringParser::detectCommandType(std::array<char, MAX_IP_PACK_SIZE> &read_msg_)
 {
+	std::cout<<"type detection \n";
+		std::cout<<"type detection \n";
 	if (read_msg_.data()[0] == 'C')
 	{
 		if (read_msg_.data()[2] == 'A')
@@ -110,6 +115,46 @@ stringParser::CommandTypes stringParser::detectCommandType(std::array<char, MAX_
 		}
 	}
 	return CommandTypes::NOT_DETECTED_COMMAND;
+}
+
+
+bool stringParser::removeSomeTrash(std::array<char, MAX_IP_PACK_SIZE> &read_msg_)
+{
+	std::string s = read_msg_.data();
+	std::string delimiter = "C";
+
+	// s = s.substr(4, s.length());
+	// s.append(" ");
+	// memset(angles.data(), -1, NUMBER_OF_ANGLES);
+
+	size_t pos = 0;
+	std::string currentSubString;
+	// int anglesAndID[NUMBER_OF_ANGLES + 1];
+	// int numberCounter = 0;
+	// int axis_ = 0;
+	// int angle_ = 0;
+	// int id_ = 0;
+	// int numberOfParams = 3;
+	// while ((pos = s.find(delimiter)) != std::string::npos)
+	// {
+	// 	currentSubString = s.substr(0, pos);
+	// 	std::cout << currentSubString << "\n";
+	// 	currentSubString = s.substr(pos,s.length());
+	// 	std::cout << currentSubString << "\n";
+	// 	int currentNumber = 0;
+	// 	s.erase(0, pos);
+	// 	currentSubString.copy(read_msg_.data(),currentSubString.length());
+	// 	std::cout <<"new read_msg = " << read_msg_.data() << "\n";
+	// 	// read_msg_.data() = currentSubString;
+	// }
+
+	if(pos = s.find(delimiter)){
+		currentSubString = s.substr(pos+1,s.length());
+		std::cout << currentSubString << "\n";
+		currentSubString.copy(read_msg_.data(),currentSubString.length());
+		std::cout <<"new read_msg = " << read_msg_.data() << "\n";
+	}
+	return true;
 }
 
 //   Axis Angle ID
@@ -255,6 +300,19 @@ bool stringParser::parseCommandMoveID(std::array<char, MAX_IP_PACK_SIZE> &read_m
 	return true;
 }
 
+// protocol 3
+// C M 0 10 0
+//  axis angle id
+// if map[name] id == received id + !M = start movement DONE
+// if movement finished = inc users id DONE
+// if map[name] id == received id + M = do nothing = there is many users = someones users id will be increased = to him will be send a command to inc its id + other
+// user will probably start movement with his current id
+
+// if map[name] id > received id = sends stop + inc
+// if map[name] id < received id + M = do nothing // waits for finishing == id inc, then it will start
+
+// if movement finished == increase map[name].id
+
 void personInRoom::readHandler(const boost::system::error_code &error)
 {
 	if (!error)
@@ -262,12 +320,13 @@ void personInRoom::readHandler(const boost::system::error_code &error)
 
 		// room_.broadcast(read_msg_, shared_from_this());
 
+std::cout << read_msg_.data() << " =received str"<<std::endl;
 		stringParser parser;
-
+// parser.removeSomeTrash(read_msg_);
 		stringParser::CommandTypes type = parser.detectCommandType(read_msg_);
 
 		// new
-		// std::cout << "current type = " << int(type) << std::endl;
+		std::cout << "current type = " << int(type) << std::endl;
 
 		static int counter = 0;
 
@@ -305,17 +364,34 @@ void personInRoom::readHandler(const boost::system::error_code &error)
 				}
 			}
 		}
+    
+// protocol 3
+// C M 0 10 0
+//  axis angle id
+// if map[name] id == received id + !M = start movement DONE
+// if movement finished = inc users id DONE
+// if map[name] id == received id + M = do nothing = there is many users = someones users id will be increased = to him will be send a command to inc its id + other
+// user will probably start movement with his current id
+
+// if map[name] id > received id = sends stop + inc
+// if map[name] id < received id + M = do nothing // waits for finishing == id inc, then it will start
+
+// if movement finished == increase map[name].id = increase server user's id 
 
 		// C M axis angle id
-		else if (type == stringParser::CommandTypes::MOVE)
+		else 
+		if (type == stringParser::CommandTypes::MOVE)
 		{
 			std::string msg;
 			if (parser.parseCommandMove(read_msg_, motorController_->receivedAngle, axis, id))
 			{
 
 				// starts movement if id is correct + no movement
-				if (id == motorController_->currentMovementID[axis] && !motorController_->isThereMovementToSpecificAngle[axis])
+				std::string nickStr(nickname_.data());
+				std::cout << "	name_to_id[nickname]= " << room_.name_to_id[nickStr] << std::endl;
+				if (id == room_.name_to_id[nickStr] && !motorController_->isThereMovementToSpecificAngle[axis])
 				{
+					motorController_->personControllingAxis[axis] = this;
 					motorController_-> isThereMovementToSpecificAngle[axis] = true;		
 					std::cout << "starts movement, axis angle id " << axis << " " << motorController_->receivedAngle[axis]<< " " << id << std::endl;
 
@@ -327,11 +403,12 @@ void personInRoom::readHandler(const boost::system::error_code &error)
 
 					// stop condition. id doesnt equal to current id
 				}
-				else if (id != motorController_->currentMovementID[axis])
+				else if ( room_.name_to_id[nickStr] > id)
 				{
 
-					msg = "C MS " + std::to_string(axis) + "\n";
-					std::cout << " sends stop =" << msg; 
+					//increment val
+					msg = "C MSI " + std::to_string(axis) + "\n";
+					std::cout << " sends stop+inc =" << msg; 
 					memset(motorController_->textMsg.data(), '\0', MAX_IP_PACK_SIZE);
 					memcpy(motorController_->textMsg.data(), msg.data(), msg.size());
 					// std::this_thread::sleep_for(std::chrono::milliseconds(200));

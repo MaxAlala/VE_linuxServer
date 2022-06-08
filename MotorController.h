@@ -5,6 +5,8 @@
 #include <array>
 #include <unistd.h>
 
+class personInRoom;
+
 class MotorController {
 public:
 
@@ -82,6 +84,9 @@ int currentMovementID [2];
 int homePositions[6];
 bool isThereMovementToSpecificAngle[6];
 bool shouldInverseSignOfReceivedAngleFromClient[6];
+
+personInRoom* personControllingAxis[2];
+
 class AxisBorders
 {
 public:
