@@ -121,20 +121,20 @@ std::cout<<"333 \n";
     isThereMovementToSpecificAngle[currentAxis] = false;
     ++currentMovementID[currentAxis];
 
-    ++personControllingAxis[currentAxis]->room_.name_to_id[std::string(personControllingAxis[currentAxis]->nickname_.data())];
+    ++personControllingAxis[currentAxis]->room_.name_to_id[currentAxis][personControllingAxis[currentAxis]->nicknameStr];
     
-    std::cout << "cur id0 = " << personControllingAxis[currentAxis]->room_.name_to_id[std::string(personControllingAxis[currentAxis]->nickname_.data())]<< std::endl;
+    std::cout << "cur id0 = " << personControllingAxis[currentAxis]->room_.name_to_id[currentAxis][personControllingAxis[currentAxis]->nicknameStr] << std::endl;
     
 }
 
 void MotorController::moveAxisToSpecificAngle2(int angleToReach)
 {
-    std::cout<<"222_2 \n";
+    std::cout<<"222 2\n";
     int currentAxis = 1;
     if (angleToReach < axisBorders[currentAxis].left || angleToReach > axisBorders[currentAxis].right)
         return;
 
-std::cout<<"333_2 \n";
+std::cout<<"333 2\n";
     isThereMovementToSpecificAngle[currentAxis] = true;
     while ((currentAngle[currentAxis] != angleToReach) && isThereMovementToSpecificAngle[currentAxis])
     {
@@ -163,7 +163,10 @@ std::cout<<"333_2 \n";
     }
     isThereMovementToSpecificAngle[currentAxis] = false;
     ++currentMovementID[currentAxis];
-        std::cout << "cur id1 = " << currentMovementID[currentAxis] << std::endl;
+
+    ++personControllingAxis[currentAxis]->room_.name_to_id[currentAxis][personControllingAxis[currentAxis]->nicknameStr];
+    
+    std::cout << "cur id1 = " << personControllingAxis[currentAxis]->room_.name_to_id[currentAxis][personControllingAxis[currentAxis]->nicknameStr] << std::endl;
 }
 
 bool MotorController::checkIfRobotIsAtHome()

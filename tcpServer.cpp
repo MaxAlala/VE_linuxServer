@@ -10,7 +10,9 @@ void chatRoom::enter(std::shared_ptr<participant> participant, const std::string
 {
 	participants_.insert(participant);
 	name_table_[participant] = nickname;
-	name_to_id[nickname] = 0;
+	for(int i = 0; i < NUMBER_OF_ANGLES; i++)
+	  name_to_id[i][nickname] = 0;
+
 	std::for_each(recent_msgs_.begin(), recent_msgs_.end(),
 				  boost::bind(&participant::onMessage, participant, _1));
 }
@@ -87,7 +89,8 @@ void personInRoom::nicknameHandler(const boost::system::error_code &error)
 	// 	// nickname_[MAX_NICKNAME - 2] = ':';
 	// 	// nickname_[MAX_NICKNAME - 1] = ' ';
 	// }
-
+    nicknameStr = nickname_.data();
+	std::cout << "nickname=" << nickname_.data() << std::endl;
 	room_.enter(shared_from_this(), std::string(nickname_.data()));
 
 	boost::asio::async_read(socket_,
@@ -319,7 +322,7 @@ void personInRoom::readHandler(const boost::system::error_code &error)
 	{
 
 		// room_.broadcast(read_msg_, shared_from_this());
-
+// read_msg_.data()[MAX_IP_PACK_SIZE-1]=0;
 std::cout << read_msg_.data() << " =received str"<<std::endl;
 		stringParser parser;
 // parser.removeSomeTrash(read_msg_);
@@ -368,15 +371,12 @@ std::cout << read_msg_.data() << " =received str"<<std::endl;
 // protocol 3
 // C M 0 10 0
 //  axis angle id
-// if map[name] id == received id + !M = start movement DONE
-// if movement finished = inc users id DONE
-// if map[name] id == received id + M = do nothing = there is many users = someones users id will be increased = to him will be send a command to inc its id + other
-// user will probably start movement with his current id
-
-// if map[name] id > received id = sends stop + inc
-// if map[name] id < received id + M = do nothing // waits for finishing == id inc, then it will start
 
 // if movement finished == increase map[name].id = increase server user's id 
+// if map[name] id == received id + M = sends stop + inc
+// if map[name] id > received id = sends stop + inc
+// if map[name] id < received id + M = do nothing // waits for finishing == id inc, then it will start
+// if map[name] id <= received id + !M = set new map.id+start M // waits for finishing == id inc, then it will start
 
 		// C M axis angle id
 		else 
@@ -385,12 +385,12 @@ std::cout << read_msg_.data() << " =received str"<<std::endl;
 			std::string msg;
 			if (parser.parseCommandMove(read_msg_, motorController_->receivedAngle, axis, id))
 			{
-
 				// starts movement if id is correct + no movement
-				std::string nickStr(nickname_.data());
-				std::cout << "	name_to_id[nickname]= " << room_.name_to_id[nickStr] << std::endl;
-				if (id == room_.name_to_id[nickStr] && !motorController_->isThereMovementToSpecificAngle[axis])
+				// std::string nickStr(nickname_.data());
+				std::cout << "	name_to_id[nickname]= " << room_.name_to_id[axis][nicknameStr] << std::endl;
+				if (id >= room_.name_to_id[axis][nicknameStr] && !motorController_->isThereMovementToSpecificAngle[axis])
 				{
+					room_.name_to_id[axis][nicknameStr] = id;
 					motorController_->personControllingAxis[axis] = this;
 					motorController_-> isThereMovementToSpecificAngle[axis] = true;		
 					std::cout << "starts movement, axis angle id " << axis << " " << motorController_->receivedAngle[axis]<< " " << id << std::endl;
@@ -403,9 +403,18 @@ std::cout << read_msg_.data() << " =received str"<<std::endl;
 
 					// stop condition. id doesnt equal to current id
 				}
-				else if ( room_.name_to_id[nickStr] > id)
+				else if ( room_.name_to_id[axis][nicknameStr] > id)
 				{
-
+					//increment val
+					msg = "C MSI " + std::to_string(axis) + "\n";
+					std::cout << " sends stop+inc =" << msg; 
+					memset(motorController_->textMsg.data(), '\0', MAX_IP_PACK_SIZE);
+					memcpy(motorController_->textMsg.data(), msg.data(), msg.size());
+					// std::this_thread::sleep_for(std::chrono::milliseconds(200));
+					onMessage(motorController_->textMsg);
+				}
+				else if (id == room_.name_to_id[axis][nicknameStr] && motorController_->isThereMovementToSpecificAngle[axis]) {
+						
 					//increment val
 					msg = "C MSI " + std::to_string(axis) + "\n";
 					std::cout << " sends stop+inc =" << msg; 
@@ -648,4 +657,5 @@ int main(int argc, char *argv[])
 	wiringPiSetupGpio();
 	ServerController serverController;
 	serverController.startServer();
+
 }

@@ -80,7 +80,7 @@ public:
 	void broadcast(std::array<char, MAX_IP_PACK_SIZE>& msg, std::shared_ptr<participant> participant);
 
 	std::string getNickname(std::shared_ptr<participant> participant);
-	std::unordered_map<std::string, int> name_to_id;
+	std::unordered_map<std::string, int> name_to_id[NUMBER_OF_ANGLES];
 private:
 	enum { max_recent_msgs = 100 };
 	std::unordered_set<std::shared_ptr<participant>> participants_;
@@ -105,6 +105,7 @@ public:
 	void onMessage(std::array<char, MAX_IP_PACK_SIZE>& msg);
 	chatRoom& room_;
 		std::array<char, MAX_NICKNAME> nickname_;
+		std::string nicknameStr;
 	//std::vector<int> angles;
 private:
 	void nicknameHandler(const boost::system::error_code& error);

@@ -5,7 +5,7 @@
 enum : unsigned
 {
 	MAX_IP_PACK_SIZE = 512,
-	MAX_NICKNAME = 3,
+	MAX_NICKNAME = 16,
 	PADDING = 24,
 	NUMBER_OF_ANGLES=2
 };
