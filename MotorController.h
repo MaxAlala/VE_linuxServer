@@ -16,10 +16,10 @@ void moveAxisToSomeAngle1(int angleToReach);
 void moveAxisToSomeAngle2(int angleToReach);
 void moveAxisToSpecificAngle1(int angleToReach);
 void moveAxisToSpecificAngle2(int angleToReach);
-void moveAxisBack1(int axisIndex);
-void moveAxisBack2(int axisIndex);
-void moveAxisForward1(int axisIndex);
-void moveAxisForward2(int axisIndex);
+void moveAxisBack1(int axisIndex, int microseconds);
+void moveAxisBack2(int axisIndex, int microseconds);
+void moveAxisForward1(int axisIndex, int microseconds);
+void moveAxisForward2(int axisIndex, int microseconds);
 void moveAxisToSomeAngleI(int angleToReach, int axes);
 
 void startAutohoming();

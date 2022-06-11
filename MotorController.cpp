@@ -89,7 +89,15 @@ void MotorController::moveAxisToSpecificAngle1(int angleToReach)
     std::cout<<"222 \n";
     int currentAxis = 0;
     if (angleToReach < axisBorders[currentAxis].left || angleToReach > axisBorders[currentAxis].right)
+    {
+        std::cout << currentAxis << " axis reached Axis border \n";
+        isThereMovementToSpecificAngle[currentAxis] = false;
+        ++currentMovementID[currentAxis];
+        ++personControllingAxis[currentAxis]->room_.name_to_id[currentAxis][personControllingAxis[currentAxis]->nicknameStr];
+        std::cout << "cur id0 = " << personControllingAxis[currentAxis]->room_.name_to_id[currentAxis][personControllingAxis[currentAxis]->nicknameStr] << std::endl;
+    
         return;
+    }
 
 std::cout<<"333 \n";
     isThereMovementToSpecificAngle[currentAxis] = true;
@@ -99,30 +107,28 @@ std::cout<<"333 \n";
         {
             if (isMagnetValueUpForward[currentAxis])
             {
-                moveAxisForward1(currentAxis);
+                moveAxisForward1(currentAxis,microseconds[currentAxis]);
             }
             else
             {
-                moveAxisBack1(currentAxis);
+                moveAxisBack1(currentAxis,microseconds[currentAxis]);
             }
         }
         else if (currentAngle[currentAxis] > angleToReach)
         {
             if (isMagnetValueUpForward[currentAxis])
             {
-                moveAxisBack1(currentAxis);
+                moveAxisBack1(currentAxis,microseconds[currentAxis]);
             }
             else
             {
-                moveAxisForward1(currentAxis);
+                moveAxisForward1(currentAxis,microseconds[currentAxis]);
             }
         }
     }
     isThereMovementToSpecificAngle[currentAxis] = false;
     ++currentMovementID[currentAxis];
-
     ++personControllingAxis[currentAxis]->room_.name_to_id[currentAxis][personControllingAxis[currentAxis]->nicknameStr];
-    
     std::cout << "cur id0 = " << personControllingAxis[currentAxis]->room_.name_to_id[currentAxis][personControllingAxis[currentAxis]->nicknameStr] << std::endl;
     
 }
@@ -132,7 +138,15 @@ void MotorController::moveAxisToSpecificAngle2(int angleToReach)
     std::cout<<"222 2\n";
     int currentAxis = 1;
     if (angleToReach < axisBorders[currentAxis].left || angleToReach > axisBorders[currentAxis].right)
+    {
+        std::cout << currentAxis << " axis reached Axis border \n";
+        isThereMovementToSpecificAngle[currentAxis] = false;
+        ++currentMovementID[currentAxis];
+        ++personControllingAxis[currentAxis]->room_.name_to_id[currentAxis][personControllingAxis[currentAxis]->nicknameStr];
+        std::cout << "cur id1 = " << personControllingAxis[currentAxis]->room_.name_to_id[currentAxis][personControllingAxis[currentAxis]->nicknameStr] << std::endl;
+     
         return;
+    }
 
 std::cout<<"333 2\n";
     isThereMovementToSpecificAngle[currentAxis] = true;
@@ -142,22 +156,22 @@ std::cout<<"333 2\n";
         {
             if (isMagnetValueUpForward[currentAxis])
             {
-                moveAxisForward2(currentAxis);
+                moveAxisForward2(currentAxis,microseconds[currentAxis]);
             }
             else
             {
-                moveAxisBack2(currentAxis);
+                moveAxisBack2(currentAxis,microseconds[currentAxis]);
             }
         }
         else if (currentAngle[currentAxis] > angleToReach)
         {
             if (isMagnetValueUpForward[currentAxis])
             {
-                moveAxisBack2(currentAxis);
+                moveAxisBack2(currentAxis,microseconds[currentAxis]);
             }
             else
             {
-                moveAxisForward2(currentAxis);
+                moveAxisForward2(currentAxis,microseconds[currentAxis]);
             }
         }
     }
@@ -190,7 +204,7 @@ MotorController::MotorController()
 {
     savedReceivedAngle[0] = 999;
     savedReceivedAngle[1] = 999;
-    
+    isTheAutohomingStarted = false;
     memset(receivedIds.data(), -1, NUMBER_OF_ANGLES);
     memset(receivedAngle.data(), -1, NUMBER_OF_ANGLES);
     memset(textMsg.data(), '\0', MAX_IP_PACK_SIZE);
@@ -225,7 +239,7 @@ MotorController::MotorController()
     digitalWrite(dirPins[0], LOW);
 
     int speedIncreaser = 1;
-    int speedDecreaser = 6;
+    int speedDecreaser = 1;
 
     isNegativeCurrentAngle[0] = false;
     isNegativeCurrentAngle[1] = false;
@@ -235,14 +249,14 @@ MotorController::MotorController()
     inc[0] = 1;
     inc[1] = 1;
 
-    steps[0] = 3000 * inc[0];
-    steps[1] = 3000 * inc[1];
+    steps[0] = 100 * inc[0];
+    steps[1] = 100 * inc[1];
 
-    speedDecreaser = 1;
+    speedDecreaser = 2;
     autohomingMicroseconds[0] = 50000 / speedIncreaser * speedDecreaser;
     autohomingMicroseconds[1] = 50000 / speedIncreaser * speedDecreaser;
 
-    int autohomingVal = 100;
+    int autohomingVal = 25;
     autohomingSteps[0] = autohomingVal;
     autohomingSteps[1] = autohomingVal;
 
@@ -276,28 +290,28 @@ MotorController::MotorController()
     startRotatyEncoders();
 }
 
-void MotorController::moveAxisForward1(int axisIndex)
+void MotorController::moveAxisForward1(int axisIndex, int microseconds)
 {
     digitalWrite(dirPins[axisIndex], forwardValue[axisIndex]);
-    move_motor(stepPins[axisIndex], autohomingMicroseconds[axisIndex], autohomingSteps[axisIndex]); // high = back
+    move_motor(stepPins[axisIndex], microseconds, autohomingSteps[axisIndex]); // high = back
 }
 
-void MotorController::moveAxisBack1(int axisIndex)
+void MotorController::moveAxisBack1(int axisIndex, int microseconds)
 {
     digitalWrite(dirPins[axisIndex], !forwardValue[axisIndex]);
-    move_motor(stepPins[axisIndex], autohomingMicroseconds[axisIndex], autohomingSteps[axisIndex]); // high = back
+    move_motor(stepPins[axisIndex], microseconds, autohomingSteps[axisIndex]); // high = back
 }
 
-void MotorController::moveAxisForward2(int axisIndex)
+void MotorController::moveAxisForward2(int axisIndex, int microseconds)
 {
     digitalWrite(dirPins[axisIndex], forwardValue[axisIndex]);
-    move_motor2(stepPins[axisIndex], autohomingMicroseconds[axisIndex], autohomingSteps[axisIndex]); // high = back
+    move_motor2(stepPins[axisIndex], microseconds, autohomingSteps[axisIndex]); // high = back
 }
 
-void MotorController::moveAxisBack2(int axisIndex)
+void MotorController::moveAxisBack2(int axisIndex, int microseconds)
 {
     digitalWrite(dirPins[axisIndex], !forwardValue[axisIndex]);
-    move_motor2(stepPins[axisIndex], autohomingMicroseconds[axisIndex], autohomingSteps[axisIndex]); // high = back
+    move_motor2(stepPins[axisIndex],microseconds, autohomingSteps[axisIndex]); // high = back
 }
 
 // Blink an LED
@@ -590,14 +604,14 @@ void MotorController::reachCcwLimit1()
     int angleAfter = 0;
     int currentAxis = 0;
     int counter = 0;
-    int counterEnd = 2;
+    int counterEnd = 5;
     while (true)
     {
 
         if (counter == 0)
             angleBefore = currentAngle[currentAxis];
 
-        moveAxisForward1(currentAxis);
+        moveAxisForward1(currentAxis, autohomingMicroseconds[currentAxis]);
 
         if (counter == counterEnd)
         {
@@ -631,14 +645,14 @@ void MotorController::reachCcwLimit2()
     int angleAfter = 0;
     int currentAxis = 1;
     int counter = 0;
-    int counterEnd = 4;
+    int counterEnd = 24;
     while (true)
     {
 
         if (counter == 0)
             angleBefore = currentAngle[currentAxis];
 
-        moveAxisForward2(currentAxis);
+        moveAxisForward2(currentAxis, autohomingMicroseconds[currentAxis]);
 
         if (counter == counterEnd)
         {
@@ -704,22 +718,22 @@ void MotorController::startAutohoming()
             {
                 if (isMagnetValueUpForward[currentAxis])
                 {
-                    moveAxisForward1(currentAxis);
+                    moveAxisForward1(currentAxis, autohomingMicroseconds[currentAxis]);
                 }
                 else
                 {
-                    moveAxisBack1(currentAxis);
+                    moveAxisBack1(currentAxis, autohomingMicroseconds[currentAxis]);
                 }
             }
             else if (currentAngle[currentAxis] > homePositions[currentAxis])
             {
                 if (isMagnetValueUpForward[currentAxis])
                 {
-                    moveAxisBack1(currentAxis);
+                    moveAxisBack1(currentAxis, autohomingMicroseconds[currentAxis]);
                 }
                 else
                 {
-                    moveAxisForward1(currentAxis);
+                    moveAxisForward1(currentAxis, autohomingMicroseconds[currentAxis]);
                 }
             }
             // }
@@ -740,22 +754,22 @@ void MotorController::startAutohoming()
             {
                 if (isMagnetValueUpForward[currentAxis])
                 {
-                    moveAxisForward2(currentAxis);
+                    moveAxisForward2(currentAxis, autohomingMicroseconds[currentAxis]);
                 }
                 else
                 {
-                    moveAxisBack2(currentAxis);
+                    moveAxisBack2(currentAxis, autohomingMicroseconds[currentAxis]);
                 }
             }
             else if (currentAngle[currentAxis] > homePositions[currentAxis])
             {
                 if (isMagnetValueUpForward[currentAxis])
                 {
-                    moveAxisBack2(currentAxis);
+                    moveAxisBack2(currentAxis, autohomingMicroseconds[currentAxis]);
                 }
                 else
                 {
-                    moveAxisForward2(currentAxis);
+                    moveAxisForward2(currentAxis, autohomingMicroseconds[currentAxis]);
                 }
             }
         }
@@ -772,3 +786,8 @@ void MotorController::startAutohoming()
     threadAutohoming1.join();
     isTheAutohomingStarted = false;
 }
+
+
+
+
+

@@ -2,6 +2,11 @@
 #include "tcpServer.h"
 #include "MotorController.h"
 #include <wiringPi.h>
+#include <boost/array.hpp>
+using boost::asio::ip::tcp;
+using namespace std;
+using namespace cv;
+
 //    std::string message = "C M " + std::to_string(steps1) + " " + std::to_string(steps2) + " " + std::to_string(commandID) + "\n";
 //    std::string message = "C H " + std::to_string(commandID) + " " + std::to_string(Axis1Direction) + "\n";
 //
@@ -337,6 +342,13 @@ std::cout << read_msg_.data() << " =received str"<<std::endl;
 		int id = -1;
 		std::string msg;
 
+		if (motorController_->isTheAutohomingStarted && (type == stringParser::CommandTypes::REQUEST_ID || type == stringParser::CommandTypes::MOVE)) {
+			boost::asio::async_read(socket_,
+									boost::asio::buffer(read_msg_, read_msg_.size()),
+									strand_.wrap(boost::bind(&personInRoom::readHandler, shared_from_this(), _1)));
+			return;
+		}
+
 		if (type == stringParser::CommandTypes::REQUEST_ID)
 		{
 			// C MI axis
@@ -382,6 +394,7 @@ std::cout << read_msg_.data() << " =received str"<<std::endl;
 		else 
 		if (type == stringParser::CommandTypes::MOVE)
 		{
+			
 			std::string msg;
 			if (parser.parseCommandMove(read_msg_, motorController_->receivedAngle, axis, id))
 			{
@@ -525,7 +538,7 @@ std::cout << read_msg_.data() << " =received str"<<std::endl;
 			{
 				if (!motorController_->isTheAutohomingStarted)
 				{
-					motorController_->isTheAutohomingStarted = true;
+					motorController_->isTheAutohomingStarted = true;					
 					motorController_->startAutohoming();
 				}
 			}
@@ -651,11 +664,80 @@ bool ServerController::startServer()
 
 	return true;
 }
+void ServerController::startCamBroadCasting() {
+	std::thread camThread(&ServerController::startCamBroadCastingProc, this);
+	camThread.detach();
+}
+
+cv::Mat ServerController::retrieve_data() {
+
+    //std::string image_path = "img.jpg";
+    cv::Mat image;
+    cap.read(image);
+    // cout << "rows + cols = " << image.rows << " " << image.cols << endl;
+
+    if (image.empty()) {
+        assert("ERROR! blank frame grabbed\n");
+    }
+
+    //image = imread(image_path, cv::IMREAD_COLOR);
+    if (!image.data) {
+        std::cout << "Could not open or find the image" << std::endl;
+    }
+    return image;
+}
+
+void ServerController::startCamBroadCastingProc(){
+
+    cap.open(0);
+    if (!cap.isOpened()) {
+        assert("ERROR! Unable to open camera\n");
+    }
+
+    //boost::thread thrd(&servershow);
+    try
+    {
+        boost::asio::io_service io_service;
+        tcp::acceptor acceptor(io_service, tcp::endpoint(tcp::v4(), camPort));
+
+        for (;;) {
+            tcp::socket socket(io_service);
+            acceptor.accept(socket);
+            boost::system::error_code ignored_error;
+
+            //while (true) {
+                //retrieve the frame to be sent
+                cv::Mat frame = retrieve_data();
+                std::vector<std::uint8_t> buff;
+                cv::imencode(".jpg", frame, buff);
+
+                // now we send the header message
+                std::string image_dimensions = "640Wx480H";
+                std::string image_buff_bytes = std::to_string(buff.size());
+                std::string message_header = image_dimensions + "," + image_buff_bytes;
+                // std::cout << "sending measage header of " << std::to_string(message_header.length()) << " bytes...." << std::endl;
+                message_header.append(63 - message_header.length(), ' ');
+                message_header = message_header + '\0';
+
+                socket.write_some(boost::asio::buffer(message_header), ignored_error);
+
+                socket.write_some(boost::asio::buffer(buff), ignored_error);
+            //}
+            //flag = true;
+        }
+    }
+    catch (std::exception& e)
+    {
+        std::cerr << e.what() << std::endl;
+    }
+    //thrd.join();
+
+}
 
 int main(int argc, char *argv[])
 {
 	wiringPiSetupGpio();
 	ServerController serverController;
+	serverController.startCamBroadCasting();
 	serverController.startServer();
-
 }

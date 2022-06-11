@@ -17,9 +17,11 @@
 #include <boost/thread/thread.hpp>
 #include "protocol.hpp"
 #include "MotorController.h"
+#include<opencv2/opencv.hpp>
 
 using boost::asio::ip::tcp;
-
+using namespace std;
+using namespace cv;
 //    std::string message = "C M " + std::to_string(steps1) + " " + std::to_string(steps2) + " " + std::to_string(commandID) + "\n";
 //    std::string message = "C H " + std::to_string(commandID) + " " + std::to_string(Axis1Direction) + "\n";
 
@@ -147,11 +149,17 @@ class ServerController {
 public:
 	ServerController() {
 		serverPort = 8888;
+		camPort = 7777;
 	}
 
 	bool startServer();
+	void startCamBroadCasting();
+	void startCamBroadCastingProc();
+	cv::Mat retrieve_data();
 private:
 	int serverPort;
+	int camPort;
+	cv::VideoCapture cap;
 };
 
 class server
