@@ -26,7 +26,7 @@
 // homePositions[0] = 120;
 // homePositions[1] = 77;
 void MotorController::moveAxisToSomeAngleI(int angleToReach, int axis){
-    std::cout<<"000 \n";
+    std::cout<<"angleToReach= " << angleToReach << " axis =" << axis << "\n";
 
     if(axis == 0) {
         moveAxisToSomeAngle1(angleToReach);
@@ -52,10 +52,12 @@ std::cout<<"111 \n";
     //     isThereMovementToSpecificAngle[currentAxis] = false;
     // sleep 100ms
     // usleep(100000);
+
     auto lambdaMoveAxisToSpecificAngle = [angleToReach, this]()
     {
         moveAxisToSpecificAngle1(angleToReach);
     };
+
     std::thread threadMoveToSpecificAngle(lambdaMoveAxisToSpecificAngle);
     threadMoveToSpecificAngle.detach();
 }
@@ -107,7 +109,7 @@ std::cout<<"333 \n";
         {
             if (isMagnetValueUpForward[currentAxis])
             {
-                moveAxisForward1(currentAxis,microseconds[currentAxis]);
+                moveAxisCcw1(currentAxis,microseconds[currentAxis]);
             }
             else
             {
@@ -122,10 +124,11 @@ std::cout<<"333 \n";
             }
             else
             {
-                moveAxisForward1(currentAxis,microseconds[currentAxis]);
+                moveAxisCcw1(currentAxis,microseconds[currentAxis]);
             }
         }
     }
+
     isThereMovementToSpecificAngle[currentAxis] = false;
     ++currentMovementID[currentAxis];
     ++personControllingAxis[currentAxis]->room_.name_to_id[currentAxis][personControllingAxis[currentAxis]->nicknameStr];
@@ -239,7 +242,7 @@ MotorController::MotorController()
     digitalWrite(dirPins[0], LOW);
 
     int speedIncreaser = 1;
-    int speedDecreaser = 1;
+    int speedDecreaser = 3;
 
     isNegativeCurrentAngle[0] = false;
     isNegativeCurrentAngle[1] = false;
@@ -252,11 +255,11 @@ MotorController::MotorController()
     steps[0] = 100 * inc[0];
     steps[1] = 100 * inc[1];
 
-    speedDecreaser = 2;
+    speedDecreaser = 3;
     autohomingMicroseconds[0] = 50000 / speedIncreaser * speedDecreaser;
     autohomingMicroseconds[1] = 50000 / speedIncreaser * speedDecreaser;
 
-    int autohomingVal = 25;
+    int autohomingVal = 10;
     autohomingSteps[0] = autohomingVal;
     autohomingSteps[1] = autohomingVal;
 
@@ -269,12 +272,20 @@ MotorController::MotorController()
     // 1 300ccw;120;300cw //14
     // 2 347ccw;77;167//30
 
-    axisBorders[1].left = -13;
-    axisBorders[1].right = 167;
+// axisBorders[0].left = -60;
+// axisBorders[0].right = 300;
+// axisBorders[0].home = 120;
+
+// axisBorders[1].left = -13;
+// axisBorders[1].right = 167;
+// axisBorders[1].home = 77;
+
+    axisBorders[1].left = -3;
+    axisBorders[1].right = 157;
     axisBorders[1].home = 77;
 
-    axisBorders[0].left = -60;
-    axisBorders[0].right = 300;
+    axisBorders[0].left = -30;
+    axisBorders[0].right = 260;
     axisBorders[0].home = 120;
 
     homePositions[0] = 120;
@@ -290,28 +301,28 @@ MotorController::MotorController()
     startRotatyEncoders();
 }
 
-void MotorController::moveAxisForward1(int axisIndex, int microseconds)
+void MotorController::moveAxisCcw1(int axisIndex, int microseconds)
 {
     digitalWrite(dirPins[axisIndex], forwardValue[axisIndex]);
-    move_motor(stepPins[axisIndex], microseconds, autohomingSteps[axisIndex]); // high = back
+    move_motor(stepPins[axisIndex], microseconds, autohomingSteps[axisIndex]); // high = ccw
 }
 
 void MotorController::moveAxisBack1(int axisIndex, int microseconds)
 {
     digitalWrite(dirPins[axisIndex], !forwardValue[axisIndex]);
-    move_motor(stepPins[axisIndex], microseconds, autohomingSteps[axisIndex]); // high = back
+    move_motor(stepPins[axisIndex], microseconds, autohomingSteps[axisIndex]); 
 }
 
 void MotorController::moveAxisForward2(int axisIndex, int microseconds)
 {
     digitalWrite(dirPins[axisIndex], forwardValue[axisIndex]);
-    move_motor2(stepPins[axisIndex], microseconds, autohomingSteps[axisIndex]); // high = back
+    move_motor2(stepPins[axisIndex], microseconds, autohomingSteps[axisIndex]); // high = ccw
 }
 
 void MotorController::moveAxisBack2(int axisIndex, int microseconds)
 {
     digitalWrite(dirPins[axisIndex], !forwardValue[axisIndex]);
-    move_motor2(stepPins[axisIndex],microseconds, autohomingSteps[axisIndex]); // high = back
+    move_motor2(stepPins[axisIndex],microseconds, autohomingSteps[axisIndex]); 
 }
 
 // Blink an LED
@@ -604,15 +615,22 @@ void MotorController::reachCcwLimit1()
     int angleAfter = 0;
     int currentAxis = 0;
     int counter = 0;
-    int counterEnd = 5;
+    int counterEnd = 10;
     while (true)
     {
 
         if (counter == 0)
             angleBefore = currentAngle[currentAxis];
 
-        moveAxisForward1(currentAxis, autohomingMicroseconds[currentAxis]);
-
+        if (!isMagnetValueUpForward[currentAxis])
+        {
+            moveAxisCcw1(currentAxis,microseconds[currentAxis]);
+        }
+        else
+        {
+            moveAxisBack1(currentAxis,microseconds[currentAxis]);
+        }
+ 
         if (counter == counterEnd)
         {
 
@@ -645,15 +663,21 @@ void MotorController::reachCcwLimit2()
     int angleAfter = 0;
     int currentAxis = 1;
     int counter = 0;
-    int counterEnd = 24;
+    int counterEnd = 60;
     while (true)
     {
 
         if (counter == 0)
             angleBefore = currentAngle[currentAxis];
 
-        moveAxisForward2(currentAxis, autohomingMicroseconds[currentAxis]);
-
+        if (!isMagnetValueUpForward[currentAxis])
+        {
+            moveAxisForward2(currentAxis,microseconds[currentAxis]);
+        }
+        else
+        {
+            moveAxisBack2(currentAxis,microseconds[currentAxis]);
+        }
         if (counter == counterEnd)
         {
 
@@ -718,7 +742,7 @@ void MotorController::startAutohoming()
             {
                 if (isMagnetValueUpForward[currentAxis])
                 {
-                    moveAxisForward1(currentAxis, autohomingMicroseconds[currentAxis]);
+                    moveAxisCcw1(currentAxis, autohomingMicroseconds[currentAxis]);
                 }
                 else
                 {
@@ -733,7 +757,7 @@ void MotorController::startAutohoming()
                 }
                 else
                 {
-                    moveAxisForward1(currentAxis, autohomingMicroseconds[currentAxis]);
+                    moveAxisCcw1(currentAxis, autohomingMicroseconds[currentAxis]);
                 }
             }
             // }

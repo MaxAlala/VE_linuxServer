@@ -3,6 +3,12 @@
 #include "MotorController.h"
 #include <wiringPi.h>
 #include <boost/array.hpp>
+#include <stdio.h>
+#include <string.h>
+#include <errno.h>
+#include <wiringPi.h>
+#include <wiringSerial.h>
+#include "serialController.h"
 using boost::asio::ip::tcp;
 using namespace std;
 using namespace cv;
@@ -15,8 +21,8 @@ void chatRoom::enter(std::shared_ptr<participant> participant, const std::string
 {
 	participants_.insert(participant);
 	name_table_[participant] = nickname;
-	for(int i = 0; i < NUMBER_OF_ANGLES; i++)
-	  name_to_id[i][nickname] = 0;
+	for (int i = 0; i < NUMBER_OF_ANGLES; i++)
+		name_to_id[i][nickname] = 0;
 
 	std::for_each(recent_msgs_.begin(), recent_msgs_.end(),
 				  boost::bind(&participant::onMessage, participant, _1));
@@ -94,7 +100,7 @@ void personInRoom::nicknameHandler(const boost::system::error_code &error)
 	// 	// nickname_[MAX_NICKNAME - 2] = ':';
 	// 	// nickname_[MAX_NICKNAME - 1] = ' ';
 	// }
-    nicknameStr = nickname_.data();
+	nicknameStr = nickname_.data();
 	std::cout << "nickname=" << nickname_.data() << std::endl;
 	room_.enter(shared_from_this(), std::string(nickname_.data()));
 
@@ -105,8 +111,7 @@ void personInRoom::nicknameHandler(const boost::system::error_code &error)
 
 stringParser::CommandTypes stringParser::detectCommandType(std::array<char, MAX_IP_PACK_SIZE> &read_msg_)
 {
-	std::cout<<"type detection \n";
-		std::cout<<"type detection \n";
+	std::cout << "type detection \n";
 	if (read_msg_.data()[0] == 'C')
 	{
 		if (read_msg_.data()[2] == 'A')
@@ -124,7 +129,6 @@ stringParser::CommandTypes stringParser::detectCommandType(std::array<char, MAX_
 	}
 	return CommandTypes::NOT_DETECTED_COMMAND;
 }
-
 
 bool stringParser::removeSomeTrash(std::array<char, MAX_IP_PACK_SIZE> &read_msg_)
 {
@@ -156,23 +160,33 @@ bool stringParser::removeSomeTrash(std::array<char, MAX_IP_PACK_SIZE> &read_msg_
 	// 	// read_msg_.data() = currentSubString;
 	// }
 
-	if(pos = s.find(delimiter)){
-		currentSubString = s.substr(pos+1,s.length());
+	if (pos = s.find(delimiter))
+	{
+		currentSubString = s.substr(pos + 1, s.length());
 		std::cout << currentSubString << "\n";
-		currentSubString.copy(read_msg_.data(),currentSubString.length());
-		std::cout <<"new read_msg = " << read_msg_.data() << "\n";
+		currentSubString.copy(read_msg_.data(), currentSubString.length());
+		std::cout << "new read_msg = " << read_msg_.data() << "\n";
 	}
 	return true;
 }
 
 //   Axis Angle ID
-// C M 0 10 2
-bool stringParser::parseCommandMove(std::array<char, MAX_IP_PACK_SIZE> &read_msg_, std::array<int, NUMBER_OF_ANGLES> &angles, int &axis, int &id)
+// C M A 0 10 2
+bool stringParser::parseCommandMove(std::array<char, MAX_IP_PACK_SIZE> &read_msg_, std::array<int, NUMBER_OF_ANGLES> &angles, int &axis, int &id, bool& isRelativeMovement)
 {
 	std::string s = read_msg_.data();
 	std::string delimiter = " ";
+	// std::cout << " s =" << s << "\n";
+	// std::cout << " s[5] =" << s[5] << "\n";
 
-	s = s.substr(4, s.length());
+	if(s[4] == 'A')
+	  isRelativeMovement = false;
+	else if(s[4] == 'R')
+	  isRelativeMovement = true;
+	else return false;
+	// std::cout << " s1=" << "\n";
+
+	s = s.substr(6, s.length());
 	s.append(" ");
 	memset(angles.data(), -1, NUMBER_OF_ANGLES);
 
@@ -243,7 +257,6 @@ bool stringParser::parseCommandMove(std::array<char, MAX_IP_PACK_SIZE> &read_msg
 bool stringParser::parseCommandMoveID(std::array<char, MAX_IP_PACK_SIZE> &read_msg_, int &axis)
 {
 	std::string s = read_msg_.data();
-
 
 	// 0 10
 	s = s.substr(5, s.length());
@@ -327,10 +340,10 @@ void personInRoom::readHandler(const boost::system::error_code &error)
 	{
 
 		// room_.broadcast(read_msg_, shared_from_this());
-// read_msg_.data()[MAX_IP_PACK_SIZE-1]=0;
-std::cout << read_msg_.data() << " =received str"<<std::endl;
+		// read_msg_.data()[MAX_IP_PACK_SIZE-1]=0;
+		std::cout << read_msg_.data() << " =received str" << std::endl;
 		stringParser parser;
-// parser.removeSomeTrash(read_msg_);
+		// parser.removeSomeTrash(read_msg_);
 		stringParser::CommandTypes type = parser.detectCommandType(read_msg_);
 
 		// new
@@ -340,9 +353,11 @@ std::cout << read_msg_.data() << " =received str"<<std::endl;
 
 		int axis = -1;
 		int id = -1;
+		bool isRelativeMovement = true;
 		std::string msg;
 
-		if (motorController_->isTheAutohomingStarted && (type == stringParser::CommandTypes::REQUEST_ID || type == stringParser::CommandTypes::MOVE)) {
+		if (motorController_->isTheAutohomingStarted && (type == stringParser::CommandTypes::REQUEST_ID || type == stringParser::CommandTypes::MOVE))
+		{
 			boost::asio::async_read(socket_,
 									boost::asio::buffer(read_msg_, read_msg_.size()),
 									strand_.wrap(boost::bind(&personInRoom::readHandler, shared_from_this(), _1)));
@@ -379,24 +394,23 @@ std::cout << read_msg_.data() << " =received str"<<std::endl;
 				}
 			}
 		}
-    
-// protocol 3
-// C M 0 10 0
-//  axis angle id
 
-// if movement finished == increase map[name].id = increase server user's id 
-// if map[name] id == received id + M = sends stop + inc
-// if map[name] id > received id = sends stop + inc
-// if map[name] id < received id + M = do nothing // waits for finishing == id inc, then it will start
-// if map[name] id <= received id + !M = set new map.id+start M // waits for finishing == id inc, then it will start
+		// protocol 3
+		// C M 0 10 0
+		//  axis angle id
+
+		// if movement finished == increase map[name].id = increase server user's id
+		// if map[name] id == received id + M = sends stop + inc
+		// if map[name] id > received id = sends stop + inc
+		// if map[name] id < received id + M = do nothing // waits for finishing == id inc, then it will start
+		// if map[name] id <= received id + !M = set new map.id+start M // waits for finishing == id inc, then it will start
 
 		// C M axis angle id
-		else 
-		if (type == stringParser::CommandTypes::MOVE)
+		else if (type == stringParser::CommandTypes::MOVE)
 		{
-			
+
 			std::string msg;
-			if (parser.parseCommandMove(read_msg_, motorController_->receivedAngle, axis, id))
+			if (parser.parseCommandMove(read_msg_, motorController_->receivedAngle, axis, id, isRelativeMovement))
 			{
 				// starts movement if id is correct + no movement
 				// std::string nickStr(nickname_.data());
@@ -405,32 +419,43 @@ std::cout << read_msg_.data() << " =received str"<<std::endl;
 				{
 					room_.name_to_id[axis][nicknameStr] = id;
 					motorController_->personControllingAxis[axis] = this;
-					motorController_-> isThereMovementToSpecificAngle[axis] = true;		
-					std::cout << "starts movement, axis angle id " << axis << " " << motorController_->receivedAngle[axis]<< " " << id << std::endl;
+					motorController_->isThereMovementToSpecificAngle[axis] = true;
+					std::cout << "starts movement, axis angle id " << axis << " " << motorController_->receivedAngle[axis] << " " << id << std::endl;
 
 					motorController_->savedReceivedAngle[axis] = motorController_->receivedAngle[axis];
-					if (motorController_->shouldInverseSignOfReceivedAngleFromClient[axis])
-						motorController_->moveAxisToSomeAngleI(motorController_->currentAngle[axis] - motorController_->savedReceivedAngle[axis], axis);
-					else
-						motorController_->moveAxisToSomeAngleI(motorController_->currentAngle[axis] + motorController_->savedReceivedAngle[axis], axis);
 
+	// 				 shouldInverseSignOfReceivedAngleFromClient[0] = true;
+    //				 shouldInverseSignOfReceivedAngleFromClient[1] = false;
+					if(isRelativeMovement) {
+						if (motorController_->shouldInverseSignOfReceivedAngleFromClient[axis])
+							motorController_->moveAxisToSomeAngleI(motorController_->currentAngle[axis] - motorController_->savedReceivedAngle[axis], axis);
+						else
+							motorController_->moveAxisToSomeAngleI(motorController_->currentAngle[axis] + motorController_->savedReceivedAngle[axis], axis);
+					} else {
+						if (motorController_->shouldInverseSignOfReceivedAngleFromClient[axis])
+							motorController_->moveAxisToSomeAngleI(motorController_->axisBorders[axis].home - motorController_->savedReceivedAngle[axis], axis);
+						else
+							motorController_->moveAxisToSomeAngleI(motorController_->axisBorders[axis].home + motorController_->savedReceivedAngle[axis], axis);
+					}
+					
 					// stop condition. id doesnt equal to current id
 				}
-				else if ( room_.name_to_id[axis][nicknameStr] > id)
+				else if (room_.name_to_id[axis][nicknameStr] > id)
 				{
-					//increment val
-					msg = "C MSI " + std::to_string(axis) + "\n";
-					std::cout << " sends stop+inc =" << msg; 
+					// increment val
+					msg = "C MSI " + std::to_string(axis) + " " + std::to_string(id) + "\n";
+					std::cout << " sends stop+inc =" << msg;
 					memset(motorController_->textMsg.data(), '\0', MAX_IP_PACK_SIZE);
 					memcpy(motorController_->textMsg.data(), msg.data(), msg.size());
 					// std::this_thread::sleep_for(std::chrono::milliseconds(200));
 					onMessage(motorController_->textMsg);
 				}
-				else if (id == room_.name_to_id[axis][nicknameStr] && motorController_->isThereMovementToSpecificAngle[axis]) {
-						
-					//increment val
-					msg = "C MSI " + std::to_string(axis) + "\n";
-					std::cout << " sends stop+inc =" << msg; 
+				else if (id == room_.name_to_id[axis][nicknameStr] && motorController_->isThereMovementToSpecificAngle[axis])
+				{
+
+					// increment val
+					msg = "C MSI " + std::to_string(axis) + " " + std::to_string(id) + "\n";
+					std::cout << " sends stop+inc =" << msg;
 					memset(motorController_->textMsg.data(), '\0', MAX_IP_PACK_SIZE);
 					memcpy(motorController_->textMsg.data(), msg.data(), msg.size());
 					// std::this_thread::sleep_for(std::chrono::milliseconds(200));
@@ -538,12 +563,31 @@ std::cout << read_msg_.data() << " =received str"<<std::endl;
 			{
 				if (!motorController_->isTheAutohomingStarted)
 				{
-					motorController_->isTheAutohomingStarted = true;					
+					motorController_->isTheAutohomingStarted = true;
 					motorController_->startAutohoming();
 				}
 			}
 		}
+		// else if (type == stringParser::CommandTypes::STOP_AUTOHOMING)
+		// {
+		// 	std::string msg;
 
+		// 	// stop condition
+		// 	if (motorController_->isTheAutohomingStarted == false)
+		// 	{
+		// 		msg = "C AS";
+		// 		motorController_->isTheAutohomingStarted = false;
+		// 		memset(motorController_->textMsg.data(), '\0', MAX_IP_PACK_SIZE);
+		// 		memcpy(motorController_->textMsg.data(), msg.data(), msg.size());
+		// 		std::cout << "autohoming is finished=" << msg << std::endl;
+		// 		onMessage(motorController_->textMsg);
+		// 	}
+		// 	else
+		// 	{
+		// 		motorController_->isTheAutohomingStarted = true;
+		// 		motorController_->startAutohoming();
+		// 	}
+		// }
 		// std::string timestamp = getTimestamp();
 		// std::string nickname = nickname_.data();
 		// std::array<char, MAX_IP_PACK_SIZE> formatted_msg;
@@ -633,7 +677,7 @@ bool ServerController::startServer()
 
 		// for (int i = 1; i < argc; ++i)
 		//{
-		MotorController motorController;
+
 		tcp::endpoint endpoint(tcp::v4(), serverPort);
 		std::shared_ptr<server> a_server(new server(*io_service, *strand, endpoint, &motorController));
 		servers.push_back(a_server);
@@ -664,80 +708,252 @@ bool ServerController::startServer()
 
 	return true;
 }
-void ServerController::startCamBroadCasting() {
+void ServerController::startCamBroadCasting()
+{
 	std::thread camThread(&ServerController::startCamBroadCastingProc, this);
 	camThread.detach();
 }
 
-cv::Mat ServerController::retrieve_data() {
-
-    //std::string image_path = "img.jpg";
-    cv::Mat image;
-    cap.read(image);
-    // cout << "rows + cols = " << image.rows << " " << image.cols << endl;
-
-    if (image.empty()) {
-        assert("ERROR! blank frame grabbed\n");
-    }
-
-    //image = imread(image_path, cv::IMREAD_COLOR);
-    if (!image.data) {
-        std::cout << "Could not open or find the image" << std::endl;
-    }
-    return image;
+void ServerController::startAngleBroadcasting()
+{
+	std::thread thread_(&ServerController::startAngleBroadcastingProc, this);
+	thread_.detach();
 }
 
-void ServerController::startCamBroadCastingProc(){
+void ServerController::startLidarDistanceDetection()
+{
+	std::thread thread_(&ServerController::startLidarDistanceDetectionProc, this);
+	thread_.detach();
+}
 
-    cap.open(0);
-    if (!cap.isOpened()) {
-        assert("ERROR! Unable to open camera\n");
-    }
+void ServerController::startLidarDistanceBroadcasting()
+{
+	std::thread thread_(&ServerController::startLidarDistanceBroadcastingProc, this);
+	thread_.detach();
+}
 
-    //boost::thread thrd(&servershow);
-    try
-    {
-        boost::asio::io_service io_service;
-        tcp::acceptor acceptor(io_service, tcp::endpoint(tcp::v4(), camPort));
 
-        for (;;) {
-            tcp::socket socket(io_service);
-            acceptor.accept(socket);
-            boost::system::error_code ignored_error;
+cv::Mat ServerController::retrieve_data()
+{
 
-            //while (true) {
-                //retrieve the frame to be sent
-                cv::Mat frame = retrieve_data();
-                std::vector<std::uint8_t> buff;
-                cv::imencode(".jpg", frame, buff);
+	// std::string image_path = "img.jpg";
+	cv::Mat image;
+	cap.read(image);
+	// cout << "rows + cols = " << image.rows << " " << image.cols << endl;
 
-                // now we send the header message
-                std::string image_dimensions = "640Wx480H";
-                std::string image_buff_bytes = std::to_string(buff.size());
-                std::string message_header = image_dimensions + "," + image_buff_bytes;
-                // std::cout << "sending measage header of " << std::to_string(message_header.length()) << " bytes...." << std::endl;
-                message_header.append(63 - message_header.length(), ' ');
-                message_header = message_header + '\0';
+	if (image.empty())
+	{
+		assert("ERROR! blank frame grabbed\n");
+	}
 
-                socket.write_some(boost::asio::buffer(message_header), ignored_error);
+	// image = imread(image_path, cv::IMREAD_COLOR);
+	if (!image.data)
+	{
+		std::cout << "Could not open or find the image" << std::endl;
+	}
+	return image;
+}
 
-                socket.write_some(boost::asio::buffer(buff), ignored_error);
-            //}
-            //flag = true;
-        }
-    }
-    catch (std::exception& e)
-    {
-        std::cerr << e.what() << std::endl;
-    }
-    //thrd.join();
+void ServerController::startCamBroadCastingProc()
+{
 
+	cap.open(0);
+	if (!cap.isOpened())
+	{
+		assert("ERROR! Unable to open camera\n");
+	}
+
+	// boost::thread thrd(&servershow);
+	try
+	{
+		boost::asio::io_service io_service;
+		tcp::acceptor acceptor(io_service, tcp::endpoint(tcp::v4(), camPort));
+
+		for (;;)
+		{
+			tcp::socket socket(io_service);
+			acceptor.accept(socket);
+			boost::system::error_code ignored_error;
+
+			// while (true) {
+			// retrieve the frame to be sent
+			cv::Mat frame = retrieve_data();
+			std::vector<std::uint8_t> buff;
+			cv::imencode(".jpg", frame, buff);
+
+			// now we send the header message
+			std::string image_dimensions = "640Wx480H";
+			std::string image_buff_bytes = std::to_string(buff.size());
+			std::string message_header = image_dimensions + "," + image_buff_bytes;
+			// std::cout << "sending measage header of " << std::to_string(message_header.length()) << " bytes...." << std::endl;
+			message_header.append(63 - message_header.length(), ' ');
+			message_header = message_header + '\0';
+
+			socket.write_some(boost::asio::buffer(message_header), ignored_error);
+
+			socket.write_some(boost::asio::buffer(buff), ignored_error);
+			//}
+			// flag = true;
+		}
+	}
+	catch (std::exception &e)
+	{
+		std::cerr << e.what() << std::endl;
+	}
+	// thrd.join();
+}
+
+void ServerController::startLidarDistanceDetectionProc()
+{
+	int TFMINI_DATA_Len = 9;
+	int TFMINT_DATA_HEAD = 0x59;
+	uint16_t cordist = 0;
+	uint8_t chk_cal = 0;
+	uint8_t ar[9];
+	int counter = 0;
+	try
+	{
+
+		SimpleSerial serial("/dev/ttyUSB0", 115200);
+
+		// serial.writeString("Hello world\n");
+
+		while (true)
+		{
+			char readChar = serial.readChar();
+			// std::cout << readChar << std::endl;
+			
+			if (readChar == 'Y' && counter == 0) {
+				ar[counter] = readChar;
+				++counter;
+				continue;
+			}
+
+			if (readChar == 'Y' && counter == 1) {
+				ar[counter] = readChar;
+				++counter;
+				continue;
+			}
+
+
+			if (counter >= 2) {
+				ar[counter] = readChar;
+				++counter;
+				
+			}
+
+			if(counter >= 4) {
+				cordist = ar[2] | (ar[3] << 8);
+				// std::cout << "distance = " << cordist << "\n";
+				if (cordist > 0 && cordist < 12000) {
+					currentLidarDistance = cordist;
+				}
+				cordist = 0;
+			}
+
+			if(counter == 8){
+				// std::this_thread::sleep_for(std::chrono::milliseconds(200));
+				counter = 0;
+			}
+
+
+		}
+	}
+	catch (boost::system::system_error &e)
+	{
+		cout << "Error: " << e.what() << endl;
+		return;
+	}
+}
+
+void ServerController::startAngleBroadcastingProc()
+{
+
+	// cap.open(0);
+	// if (!cap.isOpened()) {
+	//     assert("ERROR! Unable to open camera\n");
+	// }
+
+	// boost::thread thrd(&servershow);
+	try
+	{
+		boost::asio::io_service io_service;
+		tcp::acceptor acceptor(io_service, tcp::endpoint(tcp::v4(), anglesPort));
+
+		for (;;)
+		{
+			tcp::socket socket(io_service);
+			acceptor.accept(socket);
+			boost::system::error_code ignored_error;
+
+			// while (true) {
+			// retrieve the frame to be sent
+			//  cv::Mat frame = retrieve_data();
+			//  std::vector<std::uint8_t> buff;
+			//  cv::imencode(".jpg", frame, buff);
+
+			// now we send the header message
+			std::string msgToSend;
+
+			for (int i = 0; i < NUMBER_OF_ANGLES; i++)
+			{
+				msgToSend.append(std::to_string(motorController.currentAngle[i]) + " ");
+			}
+
+			// std::string image_buff_bytes = std::to_string(buff.size());
+			// std::string message_header = image_dimensions + "," + image_buff_bytes;
+			// std::cout << "sending measage header of " << std::to_string(message_header.length()) << " bytes...." << std::endl;
+			// message_header.append(63 - message_header.length(), ' ');
+			// message_header = message_header + '\0';
+
+			socket.write_some(boost::asio::buffer(msgToSend), ignored_error);
+
+			// socket.write_some(boost::asio::buffer(buff), ignored_error);
+			//}
+			// flag = true;
+		}
+	}
+	catch (std::exception &e)
+	{
+		std::cerr << e.what() << std::endl;
+	}
+	// thrd.join();
+}
+
+void ServerController::startLidarDistanceBroadcastingProc()
+{
+	try
+	{
+		boost::asio::io_service io_service;
+		tcp::acceptor acceptor(io_service, tcp::endpoint(tcp::v4(), lidarDistancePort));
+
+		for (;;)
+		{
+			// std::this_thread::sleep_for(std::chrono::milliseconds(200));
+			tcp::socket socket(io_service);
+			acceptor.accept(socket);
+			boost::system::error_code ignored_error;
+			std::string msgToSend;
+			// std::cout << " currentLidarDistance = " << currentLidarDistance << "\n";
+			msgToSend = std::to_string(currentLidarDistance);
+			socket.write_some(boost::asio::buffer(msgToSend), ignored_error);
+		}
+	}
+	catch (std::exception &e)
+	{
+		std::cerr << e.what() << std::endl;
+	}
 }
 
 int main(int argc, char *argv[])
 {
 	wiringPiSetupGpio();
 	ServerController serverController;
+	serverController.startLidarDistanceDetection();
+	serverController.startLidarDistanceBroadcasting();
 	serverController.startCamBroadCasting();
+	serverController.startAngleBroadcasting();
 	serverController.startServer();
+	// for(int i = 0; i < 20; i++)
+	// serverController.motorController.moveAxisCcw1(0, 50000);
 }

@@ -139,7 +139,7 @@ public:
 
 	//CommandTypes color = CommandTypes::GRAY;
 	CommandTypes detectCommandType(std::array<char, MAX_IP_PACK_SIZE>& read_msg_);
-	bool parseCommandMove(std::array<char, MAX_IP_PACK_SIZE> &read_msg_, std::array<int, NUMBER_OF_ANGLES> &angles, int & axis, int& ID);
+	bool parseCommandMove(std::array<char, MAX_IP_PACK_SIZE> &read_msg_, std::array<int, NUMBER_OF_ANGLES> &angles, int & axis, int& ID, bool& isRelative);
 	bool parseCommandMoveID(std::array<char, MAX_IP_PACK_SIZE> &read_msg_, int &axis);
 bool removeSomeTrash(std::array<char, MAX_IP_PACK_SIZE> &read_msg_);
 };
@@ -150,15 +150,28 @@ public:
 	ServerController() {
 		serverPort = 8888;
 		camPort = 7777;
+		anglesPort = 9999;
+		lidarDistancePort = 6666;
 	}
 
 	bool startServer();
 	void startCamBroadCasting();
 	void startCamBroadCastingProc();
+	void startAngleBroadcasting();
+	void startAngleBroadcastingProc();
+	void startLidarDistanceDetectionProc();
+	void startLidarDistanceDetection();
+    void startLidarDistanceBroadcasting();
+	void startLidarDistanceBroadcastingProc();
+
 	cv::Mat retrieve_data();
+	uint16_t currentLidarDistance = 0;
+	MotorController motorController;
 private:
 	int serverPort;
 	int camPort;
+	int anglesPort;
+	int lidarDistancePort;
 	cv::VideoCapture cap;
 };
 
