@@ -242,22 +242,26 @@ MotorController::MotorController()
     digitalWrite(dirPins[0], LOW);
 
     int speedIncreaser = 1;
-    int speedDecreaser = 3;
+    int speedDecreaser1 = 1;
 
+    int speedDecreaser2 = 0.4;
+    
     isNegativeCurrentAngle[0] = false;
     isNegativeCurrentAngle[1] = false;
 
-    microseconds[0] = 50000 / speedIncreaser * speedDecreaser;
-    microseconds[1] = 50000 / speedIncreaser * speedDecreaser;
+    microseconds[0] = 50000 / speedIncreaser * speedDecreaser1;
+    microseconds[1] = 50000 / speedIncreaser * speedDecreaser2;
     inc[0] = 1;
     inc[1] = 1;
 
     steps[0] = 100 * inc[0];
     steps[1] = 100 * inc[1];
 
-    speedDecreaser = 3;
-    autohomingMicroseconds[0] = 50000 / speedIncreaser * speedDecreaser;
-    autohomingMicroseconds[1] = 50000 / speedIncreaser * speedDecreaser;
+    speedDecreaser1 = 3;
+    speedDecreaser2 = 3;
+    
+    autohomingMicroseconds[0] = 50000 / speedIncreaser * speedDecreaser1;
+    autohomingMicroseconds[1] = 50000 / speedIncreaser * speedDecreaser2;
 
     int autohomingVal = 10;
     autohomingSteps[0] = autohomingVal;
@@ -624,11 +628,11 @@ void MotorController::reachCcwLimit1()
 
         if (!isMagnetValueUpForward[currentAxis])
         {
-            moveAxisCcw1(currentAxis,microseconds[currentAxis]);
+            moveAxisCcw1(currentAxis,autohomingMicroseconds[currentAxis]);
         }
         else
         {
-            moveAxisBack1(currentAxis,microseconds[currentAxis]);
+            moveAxisBack1(currentAxis,autohomingMicroseconds[currentAxis]);
         }
  
         if (counter == counterEnd)
@@ -672,11 +676,11 @@ void MotorController::reachCcwLimit2()
 
         if (!isMagnetValueUpForward[currentAxis])
         {
-            moveAxisForward2(currentAxis,microseconds[currentAxis]);
+            moveAxisForward2(currentAxis,autohomingMicroseconds[currentAxis]);
         }
         else
         {
-            moveAxisBack2(currentAxis,microseconds[currentAxis]);
+            moveAxisBack2(currentAxis,autohomingMicroseconds[currentAxis]);
         }
         if (counter == counterEnd)
         {
