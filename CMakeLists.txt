@@ -4,13 +4,17 @@ project(server VERSION 0.1.0)
 include(CTest)
 enable_testing()
 #tcpServer.cpp
-add_executable(server tcpServer.cpp MotorController.cpp)
+add_executable(server tcpServer.cpp MotorController.cpp VoiceController.cpp Eye.cpp FaceDetector.cpp InverseForwardKinematicsModel.cpp Eye.cpp protocol.hpp)
 target_link_libraries(server -I/usr/include -lpthread -lboost_system -lwiringPi)
 include_directories(-I/usr/include)
+include_directories(-I/usr/include)
+
+set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR})
+include_directories(-I${PROJECT_SOURCE_DIR})
 set(CPACK_PROJECT_NAME ${PROJECT_NAME})
 set(CPACK_PROJECT_VERSION ${PROJECT_VERSION})
 include(CPack)
-
+find_package(Eigen3 REQUIRED)
 set(Boost_USE_STATIC_LIBS OFF) 
 set(Boost_USE_MULTITHREADED ON)  
 set(Boost_USE_STATIC_RUNTIME OFF) 
@@ -19,7 +23,7 @@ find_package( OpenCV REQUIRED )
 include_directories( ${OpenCV_INCLUDE_DIRS} )
 
 target_link_libraries( server ${OpenCV_LIBS} )
-
+link_directories(${Eigen_INCLUDE_DIRS})
 if(Boost_FOUND)
     include_directories(${Boost_INCLUDE_DIRS}) 
     target_link_libraries(server ${Boost_LIBRARIES})

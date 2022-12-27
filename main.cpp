@@ -13,6 +13,17 @@
 #include <chrono>
 #include <thread>
 #include <fstream>
+#include <mutex>
+#include <iostream>
+
+std::mutex mu;
+void shared_cout(std::string msg)
+{
+    std::lock_guard<std::mutex> guard(mu);
+    std::cout << msg << std::endl;
+}
+
+
 // #include "tcpServer.h"
 // global flag used to exit from the main loop
 bool RUNNING = true;

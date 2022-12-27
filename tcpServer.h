@@ -17,6 +17,7 @@
 #include <boost/thread/thread.hpp>
 #include "protocol.hpp"
 #include "MotorController.h"
+#include "VoiceController.h"
 #include<opencv2/opencv.hpp>
 
 using boost::asio::ip::tcp;
@@ -97,9 +98,11 @@ class personInRoom : public participant,
 	public std::enable_shared_from_this<personInRoom>
 {
 public:
-	personInRoom(boost::asio::io_service& io_service,
-		boost::asio::io_service::strand& strand, chatRoom& room,
-		MotorController* motorController);
+
+    personInRoom(boost::asio::io_service &io_service,
+	boost::asio::io_service::strand &strand, chatRoom &room,
+	MotorController *motorController,
+	VoiceController *voiceController);
 
 	tcp::socket& socket() { return socket_; }
 
@@ -123,6 +126,7 @@ private:
 	std::array<char, MAX_IP_PACK_SIZE> read_msg_;
 	std::deque<std::array<char, MAX_IP_PACK_SIZE> > write_msgs_;
 	MotorController* motorController_;
+	VoiceController* voiceController_;
 };
 
 class stringParser
@@ -135,15 +139,22 @@ public:
 		AUTOHOMING,
 		MOVE,
 		REQUEST_ID,
+		VOICE,
+	};
+
+	enum class VoiceCommandTypes
+	{
+		NOT_DETECTED_COMMAND = 0,
+		GREETINGS,
 	};
 
 	//CommandTypes color = CommandTypes::GRAY;
+	bool parseVoiceCommand(std::array<char, MAX_IP_PACK_SIZE> &read_msg_, VoiceCommandTypes &voiceComTyp);
 	CommandTypes detectCommandType(std::array<char, MAX_IP_PACK_SIZE>& read_msg_);
 	bool parseCommandMove(std::array<char, MAX_IP_PACK_SIZE> &read_msg_, std::array<int, NUMBER_OF_ANGLES> &angles, int & axis, int& ID, bool& isRelative);
 	bool parseCommandMoveID(std::array<char, MAX_IP_PACK_SIZE> &read_msg_, int &axis);
-bool removeSomeTrash(std::array<char, MAX_IP_PACK_SIZE> &read_msg_);
+    bool removeSomeTrash(std::array<char, MAX_IP_PACK_SIZE> &read_msg_);
 };
-
 
 class ServerController {
 public:
@@ -167,6 +178,8 @@ public:
 	cv::Mat retrieve_data();
 	uint16_t currentLidarDistance = 0;
 	MotorController motorController;
+	VoiceController voiceController;
+	
 private:
 	int serverPort;
 	int camPort;
@@ -180,8 +193,7 @@ class server
 public:
 	server(boost::asio::io_service& io_service,
 		boost::asio::io_service::strand& strand,
-		const tcp::endpoint& endpoint, MotorController* motorController);
-
+		const tcp::endpoint& endpoint, MotorController* motorController, VoiceController* voiceController);
 
 	private:
 
@@ -192,6 +204,7 @@ public:
 	boost::asio::io_service::strand& strand_;
 	tcp::acceptor acceptor_;
 	MotorController* motorController_;
+    VoiceController* voiceController_;
 	chatRoom room_;
 };
 

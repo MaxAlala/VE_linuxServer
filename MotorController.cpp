@@ -25,6 +25,12 @@
 
 // homePositions[0] = 120;
 // homePositions[1] = 77;
+
+bool MotorController::isValidAngle(int angleToReach, int axis) {
+
+  return true;
+}
+
 void MotorController::moveAxisToSomeAngleI(int angleToReach, int axis){
     std::cout<<"angleToReach= " << angleToReach << " axis =" << axis << "\n";
 
@@ -86,6 +92,13 @@ void MotorController::moveAxisToSomeAngle2(int angleToReach)
 // axisBorders[1].right = 167;
 // axisBorders[1].home = 77;
 
+// axisBorders[1].left = -3;
+// axisBorders[1].right = 157;
+// axisBorders[1].home = 77;
+
+// axisBorders[0].left = -30;
+// axisBorders[0].right = 260;
+// axisBorders[0].home = 120;
 void MotorController::moveAxisToSpecificAngle1(int angleToReach)
 {
     std::cout<<"222 \n";

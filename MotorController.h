@@ -32,6 +32,7 @@ void writeVal(uint16_t address, uint16_t valToWrite);
 void move_motor(int led, unsigned int time, int numberOfSteps);
 void move_motor2(int led, unsigned int time, int numberOfSteps);
 bool checkIfRobotIsAtHome();
+bool isValidAngle(int angleToReach, int axis);
 	// c m 70 999
 	// if currentAngle==receivedAngle
 	// sends finished command if receives the same command
