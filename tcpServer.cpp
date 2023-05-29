@@ -120,10 +120,10 @@ stringParser::CommandTypes stringParser::detectCommandType(std::array<char, MAX_
         {
             return CommandTypes::AUTOHOMING;
         }
-        else if (read_msg_.data()[2] == 'M' && read_msg_.data()[3] == 'I')
-        {
-            return CommandTypes::REQUEST_ID;
-        }
+        // else if (read_msg_.data()[2] == 'M' && read_msg_.data()[3] == 'I')
+        // {
+        //     return CommandTypes::REQUEST_ID;
+        // }
         else if (read_msg_.data()[2] == 'M')
         {
             return CommandTypes::MOVE;
@@ -391,7 +391,7 @@ void personInRoom::readHandler(const boost::system::error_code &error)
         bool isRelativeMovement = true;
         std::string msg;
 
-        if (motorController_->isTheAutohomingStarted && (type == stringParser::CommandTypes::REQUEST_ID || type == stringParser::CommandTypes::MOVE))
+        if (motorController_->isTheAutohomingStarted && (type == stringParser::CommandTypes::MOVE))
         {
             boost::asio::async_read(socket_,
                                     boost::asio::buffer(read_msg_, read_msg_.size()),
@@ -434,37 +434,29 @@ void personInRoom::readHandler(const boost::system::error_code &error)
             }
         }
 
-        // sends current id of axis
-        if (type == stringParser::CommandTypes::REQUEST_ID)
-        {
-            // C MI axis
-            // is there movement + received request for ID = stop this request. stop condition1.
-            if (parser.parseCommandMoveID(read_msg_, axis))
-            {
-                if (motorController_->isThereMovementToSpecificAngle[axis])
-                {
-                    // msg = "C MS " + std::to_string(axis) + "\n";
-                    // memset(motorController_->textMsg.data(), '\0', MAX_IP_PACK_SIZE);
-                    // memcpy(motorController_->textMsg.data(), msg.data(), msg.size());
-                    // std::this_thread::sleep_for(std::chrono::milliseconds(200));
-                    // onMessage(motorController_->textMsg);
-                }
-                else
-                {
-                    // else if no movement = sends current ID
-                    // C MI axis id
+        // // sends current id of axis
+        // if (type == stringParser::CommandTypes::REQUEST_ID)
+        // {
+        //     // C MI axis
+        //     // is there movement + received request for ID = stop this request. stop condition1.
+        //     if (parser.parseCommandMoveID(read_msg_, axis))
+        //     {
+        //         if (!motorController_->isThereMovementToSpecificAngle[axis])
+        //         {
+        //             // else if no movement = sends current ID
+        //             // C MI axis id
 
-                    std::cout << "sends ID = " << motorController_->currentMovementID[axis] << std::endl;
-                    msg = "C MI " + std::to_string(axis) + " " + std::to_string(motorController_->currentMovementID[axis]) + "\n";
-                    std::cout << "sended str= " << msg << std::endl;
+        //             std::cout << "sends ID = " << motorController_->currentMovementID[axis] << std::endl;
+        //             msg = "C MI " + std::to_string(axis) + " " + std::to_string(motorController_->currentMovementID[axis]) + "\n";
+        //             std::cout << "sended str= " << msg << std::endl;
 
-                    memset(motorController_->textMsg.data(), '\0', MAX_IP_PACK_SIZE);
-                    memcpy(motorController_->textMsg.data(), msg.data(), msg.size());
-                    // std::this_thread::sleep_for(std::chrono::milliseconds(200));
-                    onMessage(motorController_->textMsg);
-                }
-            }
-        }
+        //             memset(motorController_->textMsg.data(), '\0', MAX_IP_PACK_SIZE);
+        //             memcpy(motorController_->textMsg.data(), msg.data(), msg.size());
+        //             // std::this_thread::sleep_for(std::chrono::milliseconds(200));
+        //             onMessage(motorController_->textMsg);
+        //         }
+        //     }
+        // }
 
         // protocol 3
         // C M 0 10 0
@@ -498,21 +490,53 @@ void personInRoom::readHandler(const boost::system::error_code &error)
 
                     motorController_->savedReceivedAngle[axis] = motorController_->receivedAngle[axis];
 
+//need to inverse angle, cause math model angle is different from magnet encoder angle.
+// in math model ccw increases a value, in magnet decoder model ccw decreases a value 
     // 				 shouldInverseSignOfReceivedAngleFromClient[0] = true;
     //				 shouldInverseSignOfReceivedAngleFromClient[1] = false;
+
+// so we need to invert a sign of math model angle so that magnet model was correct after adding new math model angle
+    // isCcwIncreasesValueOfMagnetEncoder[0] = false; // ccw decreases angle val from magnet, but in math model ccw increases an angle
+    // isCcwIncreasesValueOfMagnetEncoder[1] = true; //+
+// axisBorders[0].left = -60;
+// axisBorders[0].right = 300;
+// axisBorders[0].home = 120;
+
+// axisBorders[1].left = -13;
+// axisBorders[1].right = 167;
+// axisBorders[1].home = 77;
+
+                    int angleToReach = 0;
+
                     if(isRelativeMovement) {
+                            
+
 
                         if (motorController_->shouldInverseSignOfReceivedAngleFromClient[axis])
-                            motorController_->moveAxisToSomeAngleI(motorController_->currentAngle[axis] - motorController_->savedReceivedAngle[axis], axis);
-                        else
-                            motorController_->moveAxisToSomeAngleI(motorController_->currentAngle[axis] + motorController_->savedReceivedAngle[axis], axis);
+                        {
+                            angleToReach = motorController_->currentAngle[axis] - motorController_->savedReceivedAngle[axis];
+                            // motorController_->moveAxisToSomeAngleI(motorController_->currentAngle[axis] - motorController_->savedReceivedAngle[axis], axis);
+                        }
+                        else 
+                        {
+                            angleToReach = motorController_->currentAngle[axis] + motorController_->savedReceivedAngle[axis];
+                            // motorController_->moveAxisToSomeAngleI(motorController_->currentAngle[axis] + motorController_->savedReceivedAngle[axis], axis);
+                        }
                     } else {
                         if (motorController_->shouldInverseSignOfReceivedAngleFromClient[axis])
-                            motorController_->moveAxisToSomeAngleI(motorController_->axisBorders[axis].home - motorController_->savedReceivedAngle[axis], axis);
-                        else
-                            motorController_->moveAxisToSomeAngleI(motorController_->axisBorders[axis].home + motorController_->savedReceivedAngle[axis], axis);
+                        {
+                            angleToReach = motorController_->axisBorders[axis].home - motorController_->savedReceivedAngle[axis];
+                            // motorController_->moveAxisToSomeAngleI(motorController_->axisBorders[axis].home - motorController_->savedReceivedAngle[axis], axis);
+                        }
+                        else 
+                        {
+                            angleToReach = motorController_->axisBorders[axis].home + motorController_->savedReceivedAngle[axis];
+                            // motorController_->moveAxisToSomeAngleI(motorController_->axisBorders[axis].home + motorController_->savedReceivedAngle[axis], axis);
+                        }
                     }
-                    
+
+                    motorController_->moveAxisToSomeAngleI(angleToReach, axis);
+
                     // stop condition. id doesnt equal to current id
                 }
 
@@ -973,18 +997,20 @@ void ServerController::startAngleBroadcastingProc()
 
             // now we send the header message
             std::string msgToSend;
-
+            AngleFilterMakeHomeToBeZero homeFilter;
             for (int i = 0; i < NUMBER_OF_ANGLES; i++)
             {
-                msgToSend.append(std::to_string(motorController.currentAngle[i]) + " ");
+                msgToSend.append(std::to_string(homeFilter.returnAngleWhereHomeAngleIsZero(motorController.axisBorders[i].home, motorController.currentAngle[i], motorController.isCcwIncreasesValueOfMagnetEncoder[i])) + " ");
             }
 
+            msgToSend += "\n";
             // std::string image_buff_bytes = std::to_string(buff.size());
             // std::string message_header = image_dimensions + "," + image_buff_bytes;
             // std::cout << "sending measage header of " << std::to_string(message_header.length()) << " bytes...." << std::endl;
             // message_header.append(63 - message_header.length(), ' ');
             // message_header = message_header + '\0';
 
+            std::cout << "sending these angles= " << msgToSend << std::endl;
             socket.write_some(boost::asio::buffer(msgToSend), ignored_error);
 
             // socket.write_some(boost::asio::buffer(buff), ignored_error);

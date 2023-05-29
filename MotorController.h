@@ -16,10 +16,10 @@ void moveAxisToSomeAngle1(int angleToReach);
 void moveAxisToSomeAngle2(int angleToReach);
 void moveAxisToSpecificAngle1(int angleToReach);
 void moveAxisToSpecificAngle2(int angleToReach);
-void moveAxisBack1(int axisIndex, int microseconds);
-void moveAxisBack2(int axisIndex, int microseconds);
+void moveAxisCw1(int axisIndex, int microseconds);
+void moveAxisCw2(int axisIndex, int microseconds);
 void moveAxisCcw1(int axisIndex, int microseconds);
-void moveAxisForward2(int axisIndex, int microseconds);
+void moveAxisCcw2(int axisIndex, int microseconds);
 void moveAxisToSomeAngleI(int angleToReach, int axes);
 
 void startAutohoming();
@@ -33,6 +33,7 @@ void move_motor(int led, unsigned int time, int numberOfSteps);
 void move_motor2(int led, unsigned int time, int numberOfSteps);
 bool checkIfRobotIsAtHome();
 bool isValidAngle(int angleToReach, int axis);
+
 	// c m 70 999
 	// if currentAngle==receivedAngle
 	// sends finished command if receives the same command
@@ -80,7 +81,7 @@ int autohomingMicroseconds[6];
 int autohomingSteps[6];
 bool forwardValue[6];
 bool homeWasReached[6];
-bool isMagnetValueUpForward [6];
+bool isCcwIncreasesValueOfMagnetEncoder [6];
 int currentMovementID [2];
 int homePositions[6];
 bool isThereMovementToSpecificAngle[6];
@@ -91,9 +92,40 @@ personInRoom* personControllingAxis[2];
 class AxisBorders
 {
 public:
-  int left;
-  int right;
+  int cw;
+  int ccw;
   int home;
 };
 AxisBorders axisBorders[6];
+
 };
+
+class AngleFilterMakeHomeToBeZero
+{
+public:
+
+// home is 120. moving ccw 0 axis reached 80. 
+// 120 - 80 = 40 = current angle if home is zero.
+
+// home is 77, after ccw it is 97. 20 should be displayed= ccw-home= 97-77 = 20.
+// after cw ca is 57, ca-home = -20 = correct. we should extract a home angle.
+
+  int returnAngleWhereHomeAngleIsZero(int currentHomeAngle, int currentAngle, bool isCcwIncreasesValueOfMagnetEncoder) {
+	if (isCcwIncreasesValueOfMagnetEncoder) 
+	  return currentAngle - currentHomeAngle;
+	else
+	  return currentHomeAngle - currentAngle;
+  }
+};
+
+// if home is zero
+// 0
+// cw = -130
+// ccw = 150
+// home = 0
+
+//1
+// cw = -80
+// ccw = 80
+// h = 0
+

@@ -138,7 +138,6 @@ public:
 		NOT_DETECTED_COMMAND = 0,
 		AUTOHOMING,
 		MOVE,
-		REQUEST_ID,
 		VOICE,
 	};
 
