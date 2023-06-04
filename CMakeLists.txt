@@ -3,6 +3,9 @@ project(server VERSION 0.1.0)
 
 include(CTest)
 enable_testing()
+# Enable C++11
+# set(CMAKE_CXX_STANDARD 11)
+# set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
 #tcpServer.cpp
 add_executable(server tcpServer.cpp MotorController.cpp VoiceController.cpp Eye.cpp FaceDetector.cpp InverseForwardKinematicsModel.cpp Eye.cpp protocol.hpp)
 target_link_libraries(server -I/usr/include -lpthread -lboost_system -lwiringPi)
@@ -19,6 +22,10 @@ set(Boost_USE_STATIC_LIBS OFF)
 set(Boost_USE_MULTITHREADED ON)  
 set(Boost_USE_STATIC_RUNTIME OFF) 
 find_package(Boost 1.45.0 COMPONENTS system thread) 
+
+cmake_minimum_required(VERSION 3.1)
+
+SET(OpenCV_DIR /home/pi/Desktop/installation/OpenCV-4.7.0/lib/cmake/opencv4)
 find_package( OpenCV REQUIRED )
 include_directories( ${OpenCV_INCLUDE_DIRS} )
 
