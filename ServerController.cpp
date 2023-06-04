@@ -539,6 +539,7 @@ void personInRoom::readHandler(const boost::system::error_code &error)
                 }
 
                 // sends id back and requests to increase user clients id untill it matches
+                // MSI = move stop increment
                 else if (room_.name_to_id[axis][nicknameStr] > id)
                 {
                     // increment val=move+stop+increment
@@ -780,7 +781,7 @@ bool ServerController::startServer()
         //{
 
         tcp::endpoint endpoint(tcp::v4(), serverPort);
-        std::shared_ptr<server> a_server(new server(*io_service, *strand, endpoint, &motorController, &voiceController));
+        std::shared_ptr<server> a_server(new server(*io_service, *strand, endpoint, motorController.get(), voiceController.get()));
         servers.push_back(a_server);
         //}
 
@@ -1048,15 +1049,3 @@ void ServerController::startLidarDistanceBroadcastingProc()
     }
 }
 
-int main(int argc, char *argv[])
-{
-    wiringPiSetupGpio();
-    ServerController serverController;
-    serverController.startLidarDistanceDetection();
-    serverController.startLidarDistanceBroadcasting();
-    serverController.startCamBroadCasting();
-    serverController.startAngleBroadcasting();
-    serverController.startServer();
-    // for(int i = 0; i < 20; i++)
-    // serverController.motorController.moveAxisCcw1(0, 50000);
-}

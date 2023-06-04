@@ -157,7 +157,7 @@ public:
 
 class ServerController {
 public:
-	ServerController() {
+	ServerController(MotorController* motorController_, VoiceController* voiceController_): motorController{ motorController_ }, voiceController{ voiceController_ }{
 		serverPort = 8888;
 		camPort = 7777;
 		anglesPort = 9999;
@@ -176,8 +176,8 @@ public:
 
 	cv::Mat retrieve_data();
 	uint16_t currentLidarDistance = 0;
-	MotorController motorController;
-	VoiceController voiceController;
+    std::unique_ptr<MotorController> motorController;
+	std::unique_ptr<VoiceController> voiceController;
 	
 private:
 	int serverPort;
