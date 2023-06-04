@@ -1,13 +1,13 @@
 
-#include "tcpServer.h"
+#include "ServerController.h"
 #include "MotorController.h"
 #include "VoiceController.h"
-#include <wiringPi.h>
+
 #include <boost/array.hpp>
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
-#include <wiringPi.h>
+
 #include <wiringSerial.h>
 #include "serialController.h"
 using boost::asio::ip::tcp;
@@ -16,7 +16,6 @@ using namespace cv;
 
 //    std::string message = "C M " + std::to_string(steps1) + " " + std::to_string(steps2) + " " + std::to_string(commandID) + "\n";
 //    std::string message = "C H " + std::to_string(commandID) + " " + std::to_string(Axis1Direction) + "\n";
-//
 
 void chatRoom::enter(std::shared_ptr<participant> participant, const std::string &nickname)
 {
@@ -485,7 +484,7 @@ void personInRoom::readHandler(const boost::system::error_code &error)
                 {
                     room_.name_to_id[axis][nicknameStr] = id;
                     motorController_->personControllingAxis[axis] = this;
-                    motorController_->isThereMovementToSpecificAngle[axis] = true;
+
                     std::cout << "starts movement, axis angle id " << axis << " " << motorController_->receivedAngle[axis] << " " << id << std::endl;
 
                     motorController_->savedReceivedAngle[axis] = motorController_->receivedAngle[axis];
@@ -506,34 +505,7 @@ void personInRoom::readHandler(const boost::system::error_code &error)
 // axisBorders[1].right = 167;
 // axisBorders[1].home = 77;
 
-                    int angleToReach = 0;
-
-                    if(isRelativeMovement) {
-                        
-                        if (!motorController_->isCcwIncreasesValueOfMagnetEncoder[axis])
-                        {
-                            angleToReach = motorController_->currentAngle[axis] - motorController_->savedReceivedAngle[axis];
-                            // motorController_->moveAxisToSomeAngleI(motorController_->currentAngle[axis] - motorController_->savedReceivedAngle[axis], axis);
-                        }
-                        else 
-                        {
-                            angleToReach = motorController_->currentAngle[axis] + motorController_->savedReceivedAngle[axis];
-                            // motorController_->moveAxisToSomeAngleI(motorController_->currentAngle[axis] + motorController_->savedReceivedAngle[axis], axis);
-                        }
-                    } else {
-                        if (!motorController_->isCcwIncreasesValueOfMagnetEncoder[axis])
-                        {
-                            angleToReach = motorController_->axisBorders[axis].home - motorController_->savedReceivedAngle[axis];
-                            // motorController_->moveAxisToSomeAngleI(motorController_->axisBorders[axis].home - motorController_->savedReceivedAngle[axis], axis);
-                        }
-                        else 
-                        {
-                            angleToReach = motorController_->axisBorders[axis].home + motorController_->savedReceivedAngle[axis];
-                            // motorController_->moveAxisToSomeAngleI(motorController_->axisBorders[axis].home + motorController_->savedReceivedAngle[axis], axis);
-                        }
-                    }
-
-                    motorController_->moveAxisToSomeAngleI(angleToReach, axis);
+                    motorController_->moveAxisToSomeAngleI(axis, isRelativeMovement, motorController_->savedReceivedAngle[axis]);
 
                     // stop condition. id doesnt equal to current id
                 }
@@ -999,7 +971,7 @@ void ServerController::startAngleBroadcastingProc()
             AngleFilterMakeHomeToBeZero homeFilter;
             for (int i = 0; i < NUMBER_OF_ANGLES; i++)
             {
-                msgToSend.append(std::to_string(homeFilter.returnAngleWhereHomeAngleIsZero(motorController.axisBorders[i].home, motorController.currentAngle[i], motorController.isCcwIncreasesValueOfMagnetEncoder[i])) + " ");
+                msgToSend.append(std::to_string(homeFilter.returnAngleWhereHomeAngleIsZero(motorController->axisBorders[i].home, motorController->currentAngle[i], motorController->isCcwIncreasesValueOfMagnetEncoder[i])) + " ");
             }
 
             msgToSend += "\n";

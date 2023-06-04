@@ -4,7 +4,7 @@
 #include "protocol.hpp"
 #include <array>
 #include <unistd.h>
-
+#include <stdint.h>
 class personInRoom;
 
 class MotorController {
@@ -20,7 +20,9 @@ void moveAxisCw1(int axisIndex, int microseconds);
 void moveAxisCw2(int axisIndex, int microseconds);
 void moveAxisCcw1(int axisIndex, int microseconds);
 void moveAxisCcw2(int axisIndex, int microseconds);
-void moveAxisToSomeAngleI(int angleToReach, int axes);
+void moveAxisToSomeAngleI(int axis, bool isRelativeMovement, int angleToReach);
+
+int calculateAbsoluteOrRealtiveAngles(bool isRelativeMovement, int axis, int angleToReach);
 
 void startAutohoming();
 void startRotatyEncoders();

@@ -46,7 +46,7 @@ class TcpProtocolClient;
 
 class Eye {
 public:
-    Eye(int camera_id, StepperMotorController* stepperMotorController_, InverseForwardKinematicsModel* inverseForwardKinematicsModel_, TcpProtocolClient* tcpClient, bool shouldFlipFrame = false,  bool hasMovementDetection = false);
+    Eye(int camera_id, InverseForwardKinematicsModel* inverseForwardKinematicsModel_, bool shouldFlipFrame = false,  bool hasMovementDetection = false);
     Eye(const Eye& orig);
     virtual ~Eye();
     cv::Point run();

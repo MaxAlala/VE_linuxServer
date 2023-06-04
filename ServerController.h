@@ -18,7 +18,7 @@
 #include "protocol.hpp"
 #include "MotorController.h"
 #include "VoiceController.h"
-#include<opencv2/opencv.hpp>
+#include <opencv2/opencv.hpp>
 
 using boost::asio::ip::tcp;
 using namespace std;

@@ -66,16 +66,13 @@ void CallBackFunc(int event, int x, int y, int flags, void* userdata) {
     }
 }
 
-Eye::Eye(int camera_id, StepperMotorController* stepperMotorController_, InverseForwardKinematicsModel* inverseForwardKinematicsModel_, TcpProtocolClient* tcpClient_, bool shouldFlipFrame_, bool hasMovementDetection_) :
+Eye::Eye(int camera_id, InverseForwardKinematicsModel* inverseForwardKinematicsModel_, bool shouldFlipFrame_, bool hasMovementDetection_) :
     wasPointChosen{ false },
     selectionWindow{ "select a point" },
     selectedPointWindow{ "selected point" },
     shouldFlipFrame{ shouldFlipFrame_ },
     hasMovementDetection{ hasMovementDetection_ },
-    stepperMotorController{ stepperMotorController_},
-    inverseForwardKinematicsModel{inverseForwardKinematicsModel_},
-    tcpClient{ tcpClient_ }
-
+    inverseForwardKinematicsModel{inverseForwardKinematicsModel_}
 {
 
     //movementDetector.reset(new MovementDetector());

@@ -14,7 +14,7 @@
 #include <chrono>
 #include <thread>
 #include <fstream>
-#include "tcpServer.h"
+#include "ServerController.h"
 // axisBorders[0].left = -60;
 // axisBorders[0].right = 300;
 // axisBorders[0].home = 120;
@@ -57,9 +57,16 @@ bool MotorController::isValidAngle(int angleToReach, int currentAxis)
     return true;
 }
 
-void MotorController::moveAxisToSomeAngleI(int angleToReach, int currentAxis)
+void MotorController::moveAxisToSomeAngleI(int currentAxis, bool isRelativeMovement, int angleToReach)
 {
+    int calculatedAngleToReach = 0;
+    calculatedAngleToReach = calculateAbsoluteOrRealtiveAngles(isRelativeMovement, currentAxis, angleToReach);
+
     std::cout << "angleToReach= " << angleToReach << " axis =" << currentAxis << "\n";
+                    
+    if (isThereMovementToSpecificAngle[currentAxis]) return;
+
+    isThereMovementToSpecificAngle[currentAxis] = true;
 
     if (!isValidAngle(angleToReach, currentAxis)) {
         isThereMovementToSpecificAngle[currentAxis] = false;
@@ -428,6 +435,36 @@ void MotorController::move_motor2(int led, unsigned int time, int numberOfSteps)
         std::this_thread::sleep_for(std::chrono::nanoseconds(time));
     }
 }
+
+int MotorController::calculateAbsoluteOrRealtiveAngles(bool isRelativeMovement, int axis, int angleToReach) {
+    int calculatedAngleToReach = 0;
+                    if(isRelativeMovement) {
+                        
+                        if (!isCcwIncreasesValueOfMagnetEncoder[axis])
+                        {
+                            calculatedAngleToReach = currentAngle[axis] - angleToReach;
+                            // motorController_->moveAxisToSomeAngleI(motorController_->currentAngle[axis] - motorController_->savedReceivedAngle[axis], axis);
+                        }
+                        else 
+                        {
+                            calculatedAngleToReach = currentAngle[axis] + angleToReach;
+                            // motorController_->moveAxisToSomeAngleI(motorController_->currentAngle[axis] + motorController_->savedReceivedAngle[axis], axis);
+                        }
+                    } else {
+                        if (!isCcwIncreasesValueOfMagnetEncoder[axis])
+                        {
+                            calculatedAngleToReach = axisBorders[axis].home - angleToReach;
+                            // motorController_->moveAxisToSomeAngleI(motorController_->axisBorders[axis].home - motorController_->savedReceivedAngle[axis], axis);
+                        }
+                        else 
+                        {
+                            calculatedAngleToReach = axisBorders[axis].home + angleToReach;
+                            // motorController_->moveAxisToSomeAngleI(motorController_->axisBorders[axis].home + motorController_->savedReceivedAngle[axis], axis);
+                        }
+                    }
+        return calculatedAngleToReach;
+}
+
 
 void MotorController::readVal(uint16_t *buf)
 {
