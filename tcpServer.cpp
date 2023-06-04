@@ -509,10 +509,8 @@ void personInRoom::readHandler(const boost::system::error_code &error)
                     int angleToReach = 0;
 
                     if(isRelativeMovement) {
-                            
-
-
-                        if (motorController_->shouldInverseSignOfReceivedAngleFromClient[axis])
+                        
+                        if (!motorController_->isCcwIncreasesValueOfMagnetEncoder[axis])
                         {
                             angleToReach = motorController_->currentAngle[axis] - motorController_->savedReceivedAngle[axis];
                             // motorController_->moveAxisToSomeAngleI(motorController_->currentAngle[axis] - motorController_->savedReceivedAngle[axis], axis);
@@ -523,7 +521,7 @@ void personInRoom::readHandler(const boost::system::error_code &error)
                             // motorController_->moveAxisToSomeAngleI(motorController_->currentAngle[axis] + motorController_->savedReceivedAngle[axis], axis);
                         }
                     } else {
-                        if (motorController_->shouldInverseSignOfReceivedAngleFromClient[axis])
+                        if (!motorController_->isCcwIncreasesValueOfMagnetEncoder[axis])
                         {
                             angleToReach = motorController_->axisBorders[axis].home - motorController_->savedReceivedAngle[axis];
                             // motorController_->moveAxisToSomeAngleI(motorController_->axisBorders[axis].home - motorController_->savedReceivedAngle[axis], axis);
