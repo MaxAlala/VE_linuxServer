@@ -534,7 +534,7 @@ bool ServerController::startServer()
 
 		// for (int i = 1; i < argc; ++i)
 		//{
-		MotorController motorController;
+
 		tcp::endpoint endpoint(tcp::v4(), serverPort);
 		std::shared_ptr<server> a_server(new server(*io_service, *strand, endpoint, &motorController));
 		servers.push_back(a_server);
