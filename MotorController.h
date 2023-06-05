@@ -5,6 +5,7 @@
 #include <array>
 #include <unistd.h>
 #include <stdint.h>
+#include <vector>
 class personInRoom;
 
 class MotorController {
@@ -23,6 +24,7 @@ void moveAxisCcw2(int axisIndex, int microseconds);
 void moveAxisToSomeAngleI(int axis, bool isRelativeMovement, int angleToReach);
 
 int calculateAbsoluteOrRealtiveAngles(bool isRelativeMovement, int axis, int angleToReach);
+void turretMoveAxesToSomeAngle(bool isRelativeMovement, std::vector<int>& anglesToReach);
 
 void startAutohoming();
 void startRotatyEncoders();
@@ -35,7 +37,7 @@ void move_motor(int led, unsigned int time, int numberOfSteps);
 void move_motor2(int led, unsigned int time, int numberOfSteps);
 bool checkIfRobotIsAtHome();
 bool isValidAngle(int angleToReach, int axis);
-
+bool isThereMovement();
 	// c m 70 999
 	// if currentAngle==receivedAngle
 	// sends finished command if receives the same command
@@ -61,7 +63,7 @@ int file_i2c;
 // 1 300ccw;120;300cw //14
 // 2 167ccw;77;347 //30
 enum {NUMBER_OF_AXES = 2};
- bool isTheAutohomingStarted;
+ bool isTheAutohomingRunning;
 /////////////////////////////////axes final positions
 int currentAngle [6];
 bool isNegativeCurrentAngle [2];

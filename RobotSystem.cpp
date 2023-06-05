@@ -1,13 +1,10 @@
 #include "RobotSystem.h"
 #include "ServerController.h"
 #include <mutex>
+#include "FaceDetector.h"
+// #include <Eigen/Dense>
+void shared_cout(std::string msg);
 
-std::mutex mu;
-void shared_cout(std::string msg)
-{
-    std::lock_guard<std::mutex> guard(mu);
-    std::cout << msg << std::endl;
-}
 
 RobotSystem::RobotSystem() {
     motorController.reset(new MotorController());
@@ -17,6 +14,90 @@ RobotSystem::RobotSystem() {
     pixelToMotorStepsConverter.reset(new PixelToMotorStepsConverter(640, 480, 561, 22, 12, 2.905, 1.57));
 
     currentState = States::ALIVE;
+	currentRoboticSystem = CurrentRoboticSystem::TURRET;
+}
+
+void RobotSystem::startFaceDetectionForOneSec() {
+
+		auto autohoming0 = [this]()
+		{
+			bool wasTrackerOfDetectedFaceStarted = false;
+			bool shouldStopFaceDetectionBecauseNoFaceWasDetected = false;
+			bool canSendGreetings = false;
+
+			visionController->faceDetector.startUpdatingFaces();
+
+
+			// searches for face for 2 sec
+			// stop timer
+				auto detectFaceFor2SecLmbda = [&shouldStopFaceDetectionBecauseNoFaceWasDetected, this]() {
+					 int counter = 0;
+					while (!shouldStopFaceDetectionBecauseNoFaceWasDetected) {
+
+
+						std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+						++counter;
+						if (visionController->isFaceDetected()) {
+							std::cout << "face was detected \n";
+							counter = 0;
+
+						}
+						std::cout << "counter = " << counter << "\n";
+
+
+
+						if (counter > 20)shouldStopFaceDetectionBecauseNoFaceWasDetected = true;
+
+					}
+				};
+
+				std::thread detectFaceFor2SecThread(detectFaceFor2SecLmbda);
+				detectFaceFor2SecThread.detach();
+
+				auto greetings_timer_lmbda = [&canSendGreetings, this]() {
+
+					while (!canSendGreetings) {
+						canSendGreetings = true;
+						std::this_thread::sleep_for(std::chrono::milliseconds(2000));
+					}
+				};
+
+				std::thread greetings_timer_th(greetings_timer_lmbda);
+				greetings_timer_th.detach();
+
+			while (!shouldStopFaceDetectionBecauseNoFaceWasDetected) {
+
+				// sends command to direct a robot`s tool to detected face
+				std::cout << "FaceDetectionProcess \n";
+				if (visionController->isFaceDetected()) {
+					DetectedFaceAndConfidence detectedFace = visionController->faceDetector.currentDetectedFace;
+
+					int threshold = 1;
+					if (detectedFace.faceConfidence > threshold) {
+						//std::cout << " eye.get()->isFaceDetected()=" << eye.get()->isFaceDetected() << std::endl;
+						std::cout << " face xy=" << detectedFace.faceCoordinate.x << " " << detectedFace.faceCoordinate.y << std::endl;
+						std::cout << " detectedFaces.size()=" << visionController->faceDetector.detectedFaces.size() << std::endl;
+
+						std::vector<int> angles{ 0,0 };
+						pixelToMotorStepsConverter->calculateAnglesUsingLogic(detectedFace.faceCoordinate, angles[0], angles[1]);
+						// stepperMotorController->setMovementCommand(angles);
+					    motorController->turretMoveAxesToSomeAngle(true, angles);
+						// sends a speaking command
+						// std::vector<char> speakingGreetingsCommand;
+						// speakingGreetingsCommand.push_back('G');
+						// speakingGreetingsCommand.push_back('R');
+
+						voiceController->sayGreetings();
+					}
+				}
+				std::this_thread::sleep_for(std::chrono::milliseconds(100));
+			}
+			visionController->faceDetector.stopUpdatingFaces();
+		};
+
+		std::thread thread_(autohoming0);
+		thread_.join();
 }
 
 void RobotSystem::startPatrol() {
@@ -37,7 +118,10 @@ void RobotSystem::startPatrol() {
 								//pixelToMotorStepsConverter->calculateStepsUsingInverseKinematics(chosenPoint, stepsForFirstMotor, stepsForSecondMotor);
 				std::vector<int> angles{ 0,0 };
 				pixelToMotorStepsConverter->calculateAnglesUsingLogic(chosenPoint, angles[0], angles[1]);
-				stepperMotorController->setMovementCommand(angles);
+
+				motorController->turretMoveAxesToSomeAngle(true, angles);
+				
+				// stepperMotorController->setMovementCommand(angles);
                 
 				//stepperMotorController->moveAFewDegrees(angles1, angles2, true);
 				//inverseForwardKinematicsModel->updateThetasUsingCustomAngles(angles);
@@ -73,11 +157,12 @@ void RobotSystem::startPatrol() {
 				shared_cout("TS::run(). starts a voice command.\n");
 
 				// sends a speaking command
-				std::vector<char> speakingGreetingsCommand;
-				speakingGreetingsCommand.push_back('G');
-				speakingGreetingsCommand.push_back('R');
+				// std::vector<char> speakingGreetingsCommand;
+				// speakingGreetingsCommand.push_back('G');
+				// speakingGreetingsCommand.push_back('R');
 
-				stepperMotorController->setSpeakingCommand(speakingGreetingsCommand);
+				// stepperMotorController->setSpeakingCommand(speakingGreetingsCommand);
+				voiceController->sayGreetings();
 			}
 
 			//// d || D
@@ -89,27 +174,30 @@ void RobotSystem::startPatrol() {
 				if (isFaceDetectionRunning) {				
 					auto autohoming0 = [this]()
 					{
-						eye.get()->faceDetector.startUpdatingFaces();
+						visionController->faceDetector.startUpdatingFaces();
 						while (isFaceDetectionRunning) {
 
 							std::cout << "FaceDetectionProcess \n";
-							if (eye.get()->isFaceDetected()) {
-								DetectedFaceAndConfidence detectedFace = eye.get()->faceDetector.currentDetectedFace;
+							if (visionController->isFaceDetected()) {
+								DetectedFaceAndConfidence detectedFace = visionController->faceDetector.currentDetectedFace;
 
 								int threshold = 1;
 								if (detectedFace.faceConfidence > threshold) {
 									//std::cout << " eye.get()->isFaceDetected()=" << eye.get()->isFaceDetected() << std::endl;
 									std::cout << " face xy=" << detectedFace.faceCoordinate.x << " " << detectedFace.faceCoordinate.y << std::endl;
-									std::cout << " detectedFaces.size()=" << eye.get()->faceDetector.detectedFaces.size() << std::endl;
+									std::cout << " detectedFaces.size()=" << visionController->faceDetector.detectedFaces.size() << std::endl;
 
 									std::vector<int> angles{ 0,0 };
 									pixelToMotorStepsConverter->calculateAnglesUsingLogic(detectedFace.faceCoordinate, angles[0], angles[1]);
-									stepperMotorController->setMovementCommand(angles);
+				motorController->turretMoveAxesToSomeAngle(true, angles);
+				
+									// stepperMotorController->setMovementCommand(angles);
+									
 								}
 							}
 							std::this_thread::sleep_for(std::chrono::milliseconds(400));
 						}
-						eye.get()->faceDetector.stopUpdatingFaces();
+						visionController->faceDetector.stopUpdatingFaces();
 					};
 
 					std::thread thread_(autohoming0);
@@ -190,38 +278,15 @@ void RobotSystem::startPatrol() {
 				//    return;
 				//}
 
-				stepperMotorController->setHomingCommand();
-			}
+				if (currentRoboticSystem == CurrentRoboticSystem::TURRET)
+				motorController -> startAutohoming();
 
-
-			// H || h = starts homing
-			if (k == 72 || k == 104) {
-				//z++;
-				shared_cout("TS::run(). sets homing command.\n");
-				//int axis1HomingDirection = 1;
-				//std::vector<double> thetas = inverseForwardKinematicsModel->getThetas();
-
-				//if (!(thetas[1] < 87 && thetas[1] > -87)) {
-				//    std::cerr << "Theta 1 is out of the range \n";
-				//    return;
-				//}
-
-				//if ((thetas[0] >= 90 && thetas[0] <= 180) || (thetas[0] >= 181 && thetas[0] <=270)) {
-				//    axis1HomingDirection = -1;
-				//} else if ((thetas[0] < 90 && thetas[0] >= -90) || (thetas[0] >= 271 && thetas[0] <= 450)) {
-				//    axis1HomingDirection = 1;
-				//} else {
-				//    std::cerr << "Theta 0 is out of the range \n";
-				//    return;
-				//}
-
-				stepperMotorController->setHomingCommand();
 			}
 
 			//startPatrolTerritory();
 			// P || p = starts patrolling
 			if (k == 80 || k == 112) {
-
+   				 std::vector<int> angles;
 				std::cout << "p was pressed \n";
 				//static bool shouldThreadRun = false;
 				if (p == 0) {
@@ -244,16 +309,16 @@ void RobotSystem::startPatrol() {
 
 				static bool shouldSkipOneLoop = false;
 				//std::cout << "t1 \n";
-				if (stepperMotorController->IsAutohomingRunning() == 0 && stepperMotorController->IsMovingRunning() == 0)
+				if (!motorController->isTheAutohomingRunning && !motorController->isThereMovement())
 				{
 					//std::cout << "t2 \n";
-					auto autohoming0 = [this]()
+					auto autohoming0 = [this, &angles]()
 					{
 						int ic = 0;
 						while (p == 1) {
 							//std::cout << "w123 \n";
 							//std::cout << "t3 \n";
-							if (stepperMotorController->IsMovingRunning())
+							if (motorController->isThereMovement())
 								continue;
 
 							if (!shouldSkipOneLoop) {
@@ -262,7 +327,8 @@ void RobotSystem::startPatrol() {
 									if ((int)(inverseForwardKinematicsModel->inverseKinematicsCalculatedAngles.at(0) != (int)inverseForwardKinematicsModel->getThetasWhereStartIsZero().at(0) ||
 										(int)inverseForwardKinematicsModel->inverseKinematicsCalculatedAngles.at(1) != (int)inverseForwardKinematicsModel->getThetasWhereStartIsZero().at(1)))
 									{
-										stepperMotorController->setMovementCommand(angles, false);
+										// stepperMotorController->setMovementCommand(angles, false);
+														motorController->turretMoveAxesToSomeAngle(true, angles);
 										//static int dispcounter = 0;
 										//if (dispcounter == 9999999) {
 										//std::cout << "invk= " << (int)(inverseForwardKinematicsModel->inverseKinematicsCalculatedAngles.at(0)) << " " << (int)(inverseForwardKinematicsModel->inverseKinematicsCalculatedAngles.at(1))
@@ -313,13 +379,13 @@ void RobotSystem::startPatrol() {
 							static Eigen::Vector3d pointToScan;
 
 							//if (ic > 0) {
-							Eigen::Vector3d obstacleCoordinate = eye->calculateObstacleCoordinate();
+							Eigen::Vector3d obstacleCoordinate = visionController->calculateObstacleCoordinate();
 
 							std::cout << "i is " << ic << "\n";
 							std::cout << "pointToScan is " << pointToScan.x() << " " << pointToScan.y() << " " << pointToScan.z() << "\n";
 							std::cout << "obstacleCoordinate is " << obstacleCoordinate.x() << " " << obstacleCoordinate.y() << " " << obstacleCoordinate.z() << "\n";
-							eye->drawCircleAtMap2d(cv::Point(pointToScan.x(), pointToScan.y()), cv::Scalar(0, 0, 255));
-							eye->drawCircleAtMap2d(cv::Point(obstacleCoordinate.x(), obstacleCoordinate.y()), cv::Scalar(255, 0, 0));
+							visionController->drawCircleAtMap2d(cv::Point(pointToScan.x(), pointToScan.y()), cv::Scalar(0, 0, 255));
+							visionController->drawCircleAtMap2d(cv::Point(obstacleCoordinate.x(), obstacleCoordinate.y()), cv::Scalar(255, 0, 0));
 							//}
 
 							x = cos(inverseForwardKinematicsModel->fromGradToRad(ic * angleInOneStep)) * radius;
@@ -382,7 +448,8 @@ void RobotSystem::startPatrol() {
 							++ic;
 							std::this_thread::sleep_for(std::chrono::milliseconds(700));
 
-							stepperMotorController->setMovementCommand(angles, false);
+							// stepperMotorController->setMovementCommand(angles, false);
+											motorController->turretMoveAxesToSomeAngle(true, angles);
 							//////////////////////////////////////
 							startFaceDetectionForOneSec();
 

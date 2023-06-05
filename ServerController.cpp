@@ -390,7 +390,7 @@ void personInRoom::readHandler(const boost::system::error_code &error)
         bool isRelativeMovement = true;
         std::string msg;
 
-        if (motorController_->isTheAutohomingStarted && (type == stringParser::CommandTypes::MOVE))
+        if (motorController_->isTheAutohomingRunning && (type == stringParser::CommandTypes::MOVE))
         {
             boost::asio::async_read(socket_,
                                     boost::asio::buffer(read_msg_, read_msg_.size()),
@@ -416,19 +416,7 @@ void personInRoom::readHandler(const boost::system::error_code &error)
                 }
 
                 if (voiceComType==stringParser::VoiceCommandTypes::GREETINGS) {
-
-                  if (voiceController_->isVoiceCommandActive == false) {
-
-                    auto lambdaSpeakingCommand = [this]()
-                    {
-                        voiceController_->isVoiceCommandActive = true;
-                        system("nvlc greetings.mp3 --play-and-exit");
-                        voiceController_->isVoiceCommandActive = false;
-                    };
-
-                    std::thread threadSpeakingCommand(lambdaSpeakingCommand);
-                    threadSpeakingCommand.detach();
-                  }
+                    voiceController_->sayGreetings();
                 }
             }
         }
@@ -626,7 +614,7 @@ void personInRoom::readHandler(const boost::system::error_code &error)
             if (motorController_->checkIfRobotIsAtHome())
             {
                 msg = "C A";
-                motorController_->isTheAutohomingStarted = false;
+                motorController_->isTheAutohomingRunning = false;
                 memset(motorController_->textMsg.data(), '\0', MAX_IP_PACK_SIZE);
                 memcpy(motorController_->textMsg.data(), msg.data(), msg.size());
                 std::cout << "autohoming is finished=" << msg << std::endl;
@@ -634,9 +622,9 @@ void personInRoom::readHandler(const boost::system::error_code &error)
             }
             else
             {
-                if (!motorController_->isTheAutohomingStarted)
+                if (!motorController_->isTheAutohomingRunning)
                 {
-                    motorController_->isTheAutohomingStarted = true;
+                    motorController_->isTheAutohomingRunning = true;
                     motorController_->startAutohoming();
                 }
             }

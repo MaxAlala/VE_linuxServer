@@ -12,10 +12,17 @@ class RobotSystem {
         ALIVE,
         MANUAL,
     };
+
+        enum class CurrentRoboticSystem {
+        TURRET,
+        ANDROID,
+    };
+
 public:
 RobotSystem();
 void startRobotSystem();
 void startPatrol();
+void startFaceDetectionForOneSec();
 std::unique_ptr<MotorController> motorController;
 std::unique_ptr<VoiceController> voiceController;
 std::unique_ptr<ServerController> serverController;
@@ -26,6 +33,6 @@ std::unique_ptr<PixelToMotorStepsConverter> pixelToMotorStepsConverter;
 
 private:
   States currentState;
-
+  CurrentRoboticSystem currentRoboticSystem;
 };
 

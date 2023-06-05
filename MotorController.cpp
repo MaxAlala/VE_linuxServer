@@ -57,18 +57,24 @@ bool MotorController::isValidAngle(int angleToReach, int currentAxis)
     return true;
 }
 
+void MotorController::turretMoveAxesToSomeAngle(bool isRelativeMovement, std::vector<int>& anglesToReach)
+{
+    moveAxisToSomeAngleI(0, isRelativeMovement, anglesToReach[0]);
+    moveAxisToSomeAngleI(1, isRelativeMovement, anglesToReach[1]);
+}
+
 void MotorController::moveAxisToSomeAngleI(int currentAxis, bool isRelativeMovement, int angleToReach)
 {
     int calculatedAngleToReach = 0;
     calculatedAngleToReach = calculateAbsoluteOrRealtiveAngles(isRelativeMovement, currentAxis, angleToReach);
 
-    std::cout << "angleToReach= " << angleToReach << " axis =" << currentAxis << "\n";
+    std::cout << "calculatedAngleToReach= " << calculatedAngleToReach << " axis =" << currentAxis << "\n";
                     
     if (isThereMovementToSpecificAngle[currentAxis]) return;
 
     isThereMovementToSpecificAngle[currentAxis] = true;
 
-    if (!isValidAngle(angleToReach, currentAxis)) {
+    if (!isValidAngle(calculatedAngleToReach, currentAxis)) {
         isThereMovementToSpecificAngle[currentAxis] = false;
         ++personControllingAxis[currentAxis]->room_.name_to_id[currentAxis][personControllingAxis[currentAxis]->nicknameStr];
         std::cout << "person=" << personControllingAxis[currentAxis]->nicknameStr <<  ", id = " << personControllingAxis[currentAxis]->room_.name_to_id[currentAxis][personControllingAxis[currentAxis]->nicknameStr] << std::endl;
@@ -77,11 +83,11 @@ void MotorController::moveAxisToSomeAngleI(int currentAxis, bool isRelativeMovem
 
     if (currentAxis == 0)
     {
-        moveAxisToSomeAngle1(angleToReach);
+        moveAxisToSomeAngle1(calculatedAngleToReach);
     }
     else if (currentAxis == 1)
     {
-        moveAxisToSomeAngle2(angleToReach);
+        moveAxisToSomeAngle2(calculatedAngleToReach);
     }
 }
 
@@ -264,7 +270,7 @@ bool MotorController::checkIfRobotIsAtHome()
 
     if (numberAxesAtHome == NUMBER_OF_AXES)
     {
-        isTheAutohomingStarted = false;
+        isTheAutohomingRunning = false;
         std::cout << "bot is at home \n";
     }
 
@@ -275,7 +281,7 @@ MotorController::MotorController()
 {
     savedReceivedAngle[0] = 999;
     savedReceivedAngle[1] = 999;
-    isTheAutohomingStarted = false;
+    isTheAutohomingRunning = false;
     memset(receivedIds.data(), -1, NUMBER_OF_ANGLES);
     memset(receivedAngle.data(), -1, NUMBER_OF_ANGLES);
     memset(textMsg.data(), '\0', MAX_IP_PACK_SIZE);
@@ -378,7 +384,7 @@ MotorController::MotorController()
 
     startRotatyEncoders();
 
-    isTheAutohomingStarted = true;
+    isTheAutohomingRunning = true;
     startAutohoming();
 }
 
@@ -834,8 +840,18 @@ void MotorController::reachCcwLimit2()
     }
 }
 
+bool MotorController::isThereMovement() {
+
+  for (int i = 0; i < NUMBER_OF_AXES; i++) {
+    if (isThereMovementToSpecificAngle[i]) return true;
+  }
+
+  return false;
+}
+
 void MotorController::startAutohoming()
 {
+    if (checkIfRobotIsAtHome()) return;
     // std::thread threadAutohoming0(autohoming0);
     // std::thread threadAutohoming1(autohoming1);
     // threadAutohoming0.join();
@@ -907,7 +923,7 @@ void MotorController::startAutohoming()
             //        usleep(2000000);
         }
         if (checkIfRobotIsAtHome())
-            isTheAutohomingStarted = false;
+            isTheAutohomingRunning = false;
         std::cout << "0 AXIS is AT HOME \n";
     };
 
@@ -941,7 +957,7 @@ void MotorController::startAutohoming()
         }
 
         if (checkIfRobotIsAtHome())
-            isTheAutohomingStarted = false;
+            isTheAutohomingRunning = false;
 
         std::cout << "1 AXIS is AT HOME \n";
     };
@@ -950,5 +966,5 @@ void MotorController::startAutohoming()
     std::thread threadAutohoming1(autohoming1);
     threadAutohoming0.join();
     threadAutohoming1.join();
-    isTheAutohomingStarted = false;
+    isTheAutohomingRunning = false;
 }
