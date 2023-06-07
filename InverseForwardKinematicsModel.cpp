@@ -18,7 +18,7 @@
 #include <cmath>
 #include "protocol.hpp"
 #include <mutex>
-#define M_PI           3.1415  /* pi */
+// #define M_PI           3.1415  /* pi */
 
 std::mutex mu;
 void shared_cout(std::string msg)
@@ -69,6 +69,7 @@ InverseForwardKinematicsModel::InverseForwardKinematicsModel(const InverseForwar
 }
 
 InverseForwardKinematicsModel::~InverseForwardKinematicsModel() {
+    std::cout << "~InverseForwardKinematicsModel(); \n";
 }
 
 int InverseForwardKinematicsModel::getCurrentActionAngle(int angleNum) {
@@ -309,7 +310,7 @@ void InverseForwardKinematicsModel::updateCurrentThetasUsingCustomAngles(std::ve
     };
 
     AxisBorders axisBorders[2];
-    //default_thetas{180, 0, 90, 0},
+    // //default_thetas{180, 0, 90, 0},
     axisBorders[1].left = -13;
     axisBorders[1].right = 167;
     axisBorders[1].home = 77;
@@ -323,10 +324,13 @@ void InverseForwardKinematicsModel::updateCurrentThetasUsingCustomAngles(std::ve
     //setDefaultThetas();
     //std::cout << "updateThetasUsingCustomAngles \n";
 
-    int differenceFromHomePosition[2];
-    
-    // 120 - -60 = 180? must be 60.
-    //
+    int differenceFromHomePosition[4];
+    differenceFromHomePosition[0] = 0;
+    differenceFromHomePosition[1] = 0;
+    differenceFromHomePosition[2] = 0;
+    differenceFromHomePosition[3] = 0;
+    // // 120 - -60 = 180? must be 60.
+    // //
     for(int i = 0; i < 2; i++) {
         differenceFromHomePosition[i] = axisBorders[i].home - angles.at(i);
     }

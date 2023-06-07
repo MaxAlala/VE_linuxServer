@@ -2,16 +2,24 @@
 #include "ServerController.h"
 #include <mutex>
 #include "FaceDetector.h"
+#include "serialController.h"
+
 // #include <Eigen/Dense>
 void shared_cout(std::string msg);
-
+RobotSystem::~RobotSystem(){
+		std::cout << "~RobotSystem count" << inverseForwardKinematicsModel.use_count() << "\n";
+}
 
 RobotSystem::RobotSystem() {
-    motorController.reset(new MotorController());
-    voiceController.reset(new VoiceController());
-    serverController.reset(new ServerController(motorController.get(), voiceController.get()));
-    visionController.reset(new Eye(1, inverseForwardKinematicsModel.get(), false, false));
-    pixelToMotorStepsConverter.reset(new PixelToMotorStepsConverter(640, 480, 561, 22, 12, 2.905, 1.57));
+	inverseForwardKinematicsModel = std::make_shared<InverseForwardKinematicsModel>();
+		std::cout << "RobotSystem count" << inverseForwardKinematicsModel.use_count() << "\n";
+		
+    motorController = std::make_shared<MotorController>(inverseForwardKinematicsModel);
+
+    // voiceController.reset(new VoiceController());
+    // serverController.reset(new ServerController(motorController.get(), voiceController.get()));
+    // visionController.reset(new Eye(0, inverseForwardKinematicsModel.get(), false, false));
+    // pixelToMotorStepsConverter.reset(new PixelToMotorStepsConverter(640, 480, 561, 22, 12, 2.905, 1.57));
 
     currentState = States::ALIVE;
 	currentRoboticSystem = CurrentRoboticSystem::TURRET;
@@ -100,14 +108,19 @@ void RobotSystem::startFaceDetectionForOneSec() {
 		thread_.join();
 }
 
-void RobotSystem::startPatrol() {
+void RobotSystem::startLifeFunc() {
 	for (;;) {
         bool shouldPatrol = true;
 		if (currentState == States::ALIVE) {
-			cv::Point chosenPoint = visionController->run();
-			if (chosenPoint == cv::Point(0, 0)) {
+			
+    // shared_cout(" patrol1 \n");
 
+			cv::Point chosenPoint = visionController->run();
+    std::cout << " patrol2 \n";
+			if (chosenPoint == cv::Point(0, 0)) {
+    // std::cout << " patrol3 \n";
 			} else {
+				    // std::cout << " patrol4 \n";
 				std::cout << "TurretSystem::run().received point from EYE: " << chosenPoint.x << " " << chosenPoint.y << std::endl;
 				int stepsForFirstMotor = 0;
 				int stepsForSecondMotor = 0;
@@ -560,15 +573,102 @@ void RobotSystem::startPatrol() {
 	}
 }
 
+void RobotSystem::startServer() {
+    std::thread serverThread(&ServerController::startServer, serverController.get());
+    serverThread.detach();
+}
+void RobotSystem::startLife() {
+    std::thread lifeThread(&RobotSystem::startLifeFunc, this);
+    lifeThread.detach();
+}
+
+void RobotSystem::startLidarDistanceDetectionProc()
+{
+	std::cout << currentLidarDistance << "startLidarDistanceDetectionProc111 \n";
+    int TFMINI_DATA_Len = 9;
+    int TFMINT_DATA_HEAD = 0x59;
+    uint16_t cordist = 0;
+    uint8_t chk_cal = 0;
+    uint8_t ar[9];
+	for (int i = 0; i < 9; i++) ar[i] = 0;
+    int counter = 0;
+    // try
+    // {
+
+    //     SimpleSerial serial("/dev/ttyUSB0", 115200);
+	// std::cout << currentLidarDistance << "currentLidarDistance 2\n";
+    //     // serial.writeString("Hello world\n");
+
+    //     while (true)
+    //     {
+	// 		// std::cout << currentLidarDistance << "currentLidarDistance \n";
+    //         char readChar = serial.readChar();
+    //         // std::cout << readChar << std::endl;
+            
+    //         if (readChar == 'Y' && counter == 0) {
+    //             ar[counter] = readChar;
+    //             ++counter;
+    //             continue;
+    //         }
+
+    //         if (readChar == 'Y' && counter == 1) {
+    //             ar[counter] = readChar;
+    //             ++counter;
+    //             continue;
+    //         }
+
+
+    //         if (counter >= 2) {
+    //             ar[counter] = readChar;
+    //             ++counter;
+                
+    //         }
+
+    //         if(counter >= 4) {
+    //             cordist = ar[2] | (ar[3] << 8);
+    //             // std::cout << "distance = " << cordist << "\n";
+    //             if (cordist > 0 && cordist < 12000) {
+    //                 currentLidarDistance = cordist;
+	// 				// std::cout << currentLidarDistance << "currentLidarDistance \n";
+	// 				visionController->setCurrentLidarDistance(std::to_string(currentLidarDistance));  
+    //             }
+    //             cordist = 0;
+    //         }
+
+    //         if(counter == 8){
+    //             // std::this_thread::sleep_for(std::chrono::milliseconds(200));
+    //             counter = 0;
+    //         }
+
+	// std::cout << currentLidarDistance << "currentLidarDistance 3\n";
+    //     }
+    // }
+    // catch (boost::system::system_error &e)
+    // {
+    //     cout << "Error: " << e.what() << endl;
+    //     return;
+    // }
+}
+
+void RobotSystem::startLidarDistanceDetection()
+{
+    std::thread thread_(&RobotSystem::startLidarDistanceDetectionProc, this);
+    thread_.detach();
+}
+
 void RobotSystem::startRobotSystem() {
 
 // std::unique_ptr<MotorController> motorController;
 // std::unique_ptr<VoiceController> voiceController;
 // std::unique_ptr<ServerController> serverController;
-
-
-    serverController->startServer();
-    startPatrol();
+    shared_cout(" STart1.11 \n");
+    // startServer();
+	shared_cout(" STart1.111 \n");
+    // startLife();
+	shared_cout(" STart1.1111 \n");
+	// startLidarDistanceDetection();
+	shared_cout(" STart1.11111 \n");
 
 }
 
+ 

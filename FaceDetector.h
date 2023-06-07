@@ -71,10 +71,10 @@ public:
 
 class FaceDetector {
 
-    const std::string caffeConfigFile = "models/deploy.prototxt";
-    const std::string caffeWeightFile = "models/res10_300x300_ssd_iter_140000_fp16.caffemodel";
-    const std::string tensorflowConfigFile = "models/opencv_face_detector.pbtxt";
-    const std::string tensorflowWeightFile = "models/opencv_face_detector_uint8.pb";
+    const std::string caffeConfigFile = "/home/pi/Desktop/VE_linuxServer/models/deploy.prototxt";
+    const std::string caffeWeightFile = "/home/pi/Desktop/VE_linuxServer/models/res10_300x300_ssd_iter_140000_fp16.caffemodel";
+    const std::string tensorflowConfigFile = "/home/pi/Desktop/VE_linuxServer/models/opencv_face_detector.pbtxt";
+    const std::string tensorflowWeightFile = "/home/pi/Desktop/VE_linuxServer/models/opencv_face_detector_uint8.pb";
     std::string device = "cpu";
     std::string framework = "caffe";
     cv::dnn::Net net;

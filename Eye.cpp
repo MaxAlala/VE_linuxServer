@@ -76,8 +76,8 @@ Eye::Eye(int camera_id, InverseForwardKinematicsModel* inverseForwardKinematicsM
 {
 
     //movementDetector.reset(new MovementDetector());
-    distanceToTheCentralPixel = "0";
-    shouldReceiveImageFromTCP = true;
+    lidarDistance = "0";
+    shouldReceiveImageFromTCP = false;
 
     // matrix of 0 = white
     map2d = cv::Mat::ones(1000, 1000, CV_8UC3) * 0;
@@ -102,7 +102,7 @@ Eye::Eye(int camera_id, InverseForwardKinematicsModel* inverseForwardKinematicsM
 }
 
 void Eye::setCurrentLidarDistance(std::string str) {
-    distanceToTheCentralPixel = str;
+    lidarDistance = str;
 }
 
 double Eye::getCurrentLidarDistance() {
@@ -238,8 +238,8 @@ cv::Point Eye::run() {
     static cv::Point tl;
     static cv::Point br;
 
-    faceDetector.detectFaceOpenCVDNN(frame,tl, br);
-    faceDetector.detectFaceOpenCVDNN(frame,tl, br);
+    // faceDetector.detectFaceOpenCVDNN(frame, tl, br);
+    // faceDetector.detectFaceOpenCVDNN(frame, tl, br);
     cv::rectangle(frame, tl, br, cv::Scalar(253, 88, 68), 2, 4);
     //currentFaceCoordinate = faceDetector.currentFaceCoordinate;
     //std::cout << "currentFaceCoordinate=" << currentFaceCoordinate << std::endl;
@@ -287,7 +287,7 @@ cv::Point Eye::run() {
     //            cv::Point(640, frame.rows / 4 * 3),
     //            cv::Scalar(0, 0, 0),
     //            3);
-
+    // std::cout << " eye run1 \n";
 
     int axis1HomingDirection = 1;
     std::vector<int> currentThetas = inverseForwardKinematicsModel->getThetas();
@@ -313,6 +313,7 @@ cv::Point Eye::run() {
     std::stringstream ss;
 
 
+// dispaly angles
     for (int i = 0; i < NUMBER_OF_AXES; i++) {
         ss << "th[" << i << "]=" << (int)inverseForwardKinematicsModel->currentThetasWhereStartIsZero[i];
         str = ss.str();
@@ -335,17 +336,18 @@ cv::Point Eye::run() {
     //shared_cout(str);
     //ss << "theta"
     //cv::putText(frame, str, cv::Point(300, 50), cv::FONT_HERSHEY_SCRIPT_SIMPLEX, 1, cv::Scalar(226, 43, 138), 2, false);
+    std::cout << "liddist1 \n";
+    ss << "lidarDist=" << lidarDistance;
 
     str.clear();
     str = ss.str();
-    
+    ss.str("");
+
     cv::putText(frame, str, cv::Point(50, 50), cv::FONT_HERSHEY_SCRIPT_SIMPLEX, 1, cv::Scalar(226, 43, 138), 2, false);
 
     imshow(selectionWindow, frame);
 
     int k = cv::waitKey(10);
-
-
 
     //// M || m = starts moving
     //if (k == 77 || k == 109) {
@@ -371,6 +373,8 @@ cv::Point Eye::run() {
     cv::Mat flipedMap2d;
     cv::flip(map2d, flipedMap2d, 0);
     imshow("map", flipedMap2d);
+
+    // std::cout << " eye run2 \n";
 
     if (::wasPointChosen) {
         cv::circle(frame, ::chosenPoint, 10, cv::Scalar(205, 0, 0), 2);

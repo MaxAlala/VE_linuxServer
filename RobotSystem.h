@@ -20,16 +20,22 @@ class RobotSystem {
 
 public:
 RobotSystem();
+~RobotSystem();
+void startLifeFunc();
+void startLife();
+void startServer();
 void startRobotSystem();
-void startPatrol();
+// void bringToLife();
 void startFaceDetectionForOneSec();
-std::unique_ptr<MotorController> motorController;
-std::unique_ptr<VoiceController> voiceController;
-std::unique_ptr<ServerController> serverController;
-std::unique_ptr<Eye> visionController;
-std::unique_ptr<InverseForwardKinematicsModel> inverseForwardKinematicsModel;
-std::unique_ptr<PixelToMotorStepsConverter> pixelToMotorStepsConverter;
-
+void startLidarDistanceDetectionProc();
+void startLidarDistanceDetection();
+std::shared_ptr<MotorController> motorController;
+std::shared_ptr<VoiceController> voiceController;
+std::shared_ptr<ServerController> serverController;
+std::shared_ptr<Eye> visionController;
+std::shared_ptr<InverseForwardKinematicsModel> inverseForwardKinematicsModel;
+std::shared_ptr<PixelToMotorStepsConverter> pixelToMotorStepsConverter;
+uint16_t currentLidarDistance = 0;
 
 private:
   States currentState;

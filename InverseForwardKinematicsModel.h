@@ -20,6 +20,7 @@
 class InverseForwardKinematicsModel {
 public:
     InverseForwardKinematicsModel();
+        ~InverseForwardKinematicsModel();
     InverseForwardKinematicsModel(const InverseForwardKinematicsModel& orig);
     void doForwardKinematics(std::vector<int >& thetas);
     void doInverseKinematics(std::vector<int >& thetas, Eigen::Vector3d v, bool shouldUpdateActionAngles = true, bool shouldUpdatePseudoActionAngles = false);
@@ -49,7 +50,7 @@ public:
     Eigen::Vector3d convertCoordinateFromCameraToWorldFrame(std::vector<int >& thetas, Eigen::Vector3d pointWhereToGo);
     void updateThetasAddingNewAnglesToCurrentThetas(std::vector<int>& calculatedTheta);
     Eigen::Vector3d getCoordinateSystemOriginLocation(int DhNum);
-    virtual ~InverseForwardKinematicsModel();
+    // virtual ~InverseForwardKinematicsModel();
 
     int getCurrentActionAngle(int angleNum);
 

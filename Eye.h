@@ -78,7 +78,7 @@ private:
     std::unique_ptr<InverseForwardKinematicsModel> inverseForwardKinematicsModel;
     const std::string selectionWindow;
     const std::string selectedPointWindow;
-    std::string distanceToTheCentralPixel;
+    std::string lidarDistance;
     //BufferedAsyncSerial* serialPort;
     StepperMotorController* stepperMotorController;
     TcpProtocolClient* tcpClient;

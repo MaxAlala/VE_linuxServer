@@ -472,6 +472,8 @@ void personInRoom::readHandler(const boost::system::error_code &error)
                 {
                     room_.name_to_id[axis][nicknameStr] = id;
                     motorController_->personControllingAxis[axis] = this;
+                    motorController_->isThereSomePersonControllingAxis = true;
+                    
 
                     std::cout << "starts movement, axis angle id " << axis << " " << motorController_->receivedAngle[axis] << " " << id << std::endl;
 
@@ -770,6 +772,7 @@ bool ServerController::startServer()
 
     return true;
 }
+
 void ServerController::startCamBroadCasting()
 {
     std::thread camThread(&ServerController::startCamBroadCastingProc, this);
@@ -782,11 +785,6 @@ void ServerController::startAngleBroadcasting()
     thread_.detach();
 }
 
-void ServerController::startLidarDistanceDetection()
-{
-    std::thread thread_(&ServerController::startLidarDistanceDetectionProc, this);
-    thread_.detach();
-}
 
 void ServerController::startLidarDistanceBroadcasting()
 {
@@ -865,68 +863,6 @@ void ServerController::startCamBroadCastingProc()
     // thrd.join();
 }
 
-void ServerController::startLidarDistanceDetectionProc()
-{
-    int TFMINI_DATA_Len = 9;
-    int TFMINT_DATA_HEAD = 0x59;
-    uint16_t cordist = 0;
-    uint8_t chk_cal = 0;
-    uint8_t ar[9];
-    int counter = 0;
-    try
-    {
-
-        SimpleSerial serial("/dev/ttyUSB0", 115200);
-
-        // serial.writeString("Hello world\n");
-
-        while (true)
-        {
-            char readChar = serial.readChar();
-            // std::cout << readChar << std::endl;
-            
-            if (readChar == 'Y' && counter == 0) {
-                ar[counter] = readChar;
-                ++counter;
-                continue;
-            }
-
-            if (readChar == 'Y' && counter == 1) {
-                ar[counter] = readChar;
-                ++counter;
-                continue;
-            }
-
-
-            if (counter >= 2) {
-                ar[counter] = readChar;
-                ++counter;
-                
-            }
-
-            if(counter >= 4) {
-                cordist = ar[2] | (ar[3] << 8);
-                // std::cout << "distance = " << cordist << "\n";
-                if (cordist > 0 && cordist < 12000) {
-                    currentLidarDistance = cordist;
-                }
-                cordist = 0;
-            }
-
-            if(counter == 8){
-                // std::this_thread::sleep_for(std::chrono::milliseconds(200));
-                counter = 0;
-            }
-
-
-        }
-    }
-    catch (boost::system::system_error &e)
-    {
-        cout << "Error: " << e.what() << endl;
-        return;
-    }
-}
 
 void ServerController::startAngleBroadcastingProc()
 {

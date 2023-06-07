@@ -6,25 +6,30 @@
 #include <unistd.h>
 #include <stdint.h>
 #include <vector>
+#include <memory>
+#include "InverseForwardKinematicsModel.h"
 class personInRoom;
 
 class MotorController {
 public:
 
-MotorController();
+MotorController(std::shared_ptr<InverseForwardKinematicsModel>& inverseForwardKinematicsModel_);
+~MotorController();
+void startAngleUpdatingOfKinematicsModelProc();
+void startAngleUpdatingOfKinematicsModel();
 
-void moveAxisToSomeAngle1(int angleToReach);
-void moveAxisToSomeAngle2(int angleToReach);
-void moveAxisToSpecificAngle1(int angleToReach);
-void moveAxisToSpecificAngle2(int angleToReach);
+void moveAxisToSomeAngle1(int angleToReach, bool isTCPclient);
+void moveAxisToSomeAngle2(int angleToReach, bool isTCPclient);
+void moveAxisToSpecificAngle1(int angleToReach, bool isTCPclient);
+void moveAxisToSpecificAngle2(int angleToReach, bool isTCPclient);
 void moveAxisCw1(int axisIndex, int microseconds);
 void moveAxisCw2(int axisIndex, int microseconds);
 void moveAxisCcw1(int axisIndex, int microseconds);
 void moveAxisCcw2(int axisIndex, int microseconds);
-void moveAxisToSomeAngleI(int axis, bool isRelativeMovement, int angleToReach);
+void moveAxisToSomeAngleI(int axis, bool isRelativeMovement, int angleToReach, bool isTCPclient = false);
 
 int calculateAbsoluteOrRealtiveAngles(bool isRelativeMovement, int axis, int angleToReach);
-void turretMoveAxesToSomeAngle(bool isRelativeMovement, std::vector<int>& anglesToReach);
+void turretMoveAxesToSomeAngle(bool isRelativeMovement, std::vector<int>& anglesToReach, bool isTCPclient = false);
 
 void startAutohoming();
 void startRotatyEncoders();
@@ -92,7 +97,8 @@ bool isThereMovementToSpecificAngle[6];
 bool shouldInverseSignOfReceivedAngleFromClient[6];
 
 personInRoom* personControllingAxis[2];
-
+bool isThereSomePersonControllingAxis;
+std::shared_ptr<InverseForwardKinematicsModel> inverseForwardKinematicsModel;
 class AxisBorders
 {
 public:

@@ -169,8 +169,7 @@ public:
 	void startCamBroadCastingProc();
 	void startAngleBroadcasting();
 	void startAngleBroadcastingProc();
-	void startLidarDistanceDetectionProc();
-	void startLidarDistanceDetection();
+
     void startLidarDistanceBroadcasting();
 	void startLidarDistanceBroadcastingProc();
 
