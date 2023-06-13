@@ -66,7 +66,7 @@ void CallBackFunc(int event, int x, int y, int flags, void* userdata) {
     }
 }
 
-Eye::Eye(int camera_id, InverseForwardKinematicsModel* inverseForwardKinematicsModel_, bool shouldFlipFrame_, bool hasMovementDetection_) :
+Eye::Eye(int camera_id, std::shared_ptr<InverseForwardKinematicsModel>& inverseForwardKinematicsModel_, bool shouldFlipFrame_, bool hasMovementDetection_) :
     wasPointChosen{ false },
     selectionWindow{ "select a point" },
     selectedPointWindow{ "selected point" },
@@ -77,12 +77,12 @@ Eye::Eye(int camera_id, InverseForwardKinematicsModel* inverseForwardKinematicsM
 
     //movementDetector.reset(new MovementDetector());
     lidarDistance = "0";
-    shouldReceiveImageFromTCP = false;
+    shouldTurnOffCam = false;
 
     // matrix of 0 = white
     map2d = cv::Mat::ones(1000, 1000, CV_8UC3) * 0;
 
-    if (!shouldReceiveImageFromTCP) {
+    if (!shouldTurnOffCam) {
         cap.open(camera_id);
         if (!cap.isOpened()) {
             assert("ERROR! Unable to open camera\n");
@@ -133,6 +133,7 @@ Eigen::Vector3d Eye::calculateObstacleCoordinate() {
 
     //point In Forth Coordinate System transoformed in point in 0 coordinate system
     Eigen::Vector3d p4 = {0, 0, lidarDistance};
+    // point in first coordinate system
     Eigen::Vector3d p0 = R_4_0 * p4 + forthOriginIn0;
     std::cout << "calculated obstacle in 0 cs = " << p0.x() << " " << p0.y() << " " << p0.z() << std::endl;
     return p0;
@@ -223,9 +224,14 @@ bool Eye::isFaceDetected() {
 }
 
 cv::Point Eye::run() {
-    if (shouldReceiveImageFromTCP) {
+    if (shouldTurnOffCam) {
     } else {
-        cap.read(frame);
+        bool imgval;
+        imgval = cap.read(frame);
+        // std::cout << " was img received = " << imgval << "\n";
+        //         std::cout << imgval << "\n";
+        //         std::cout << imgval << "\n";
+        //         std::cout << imgval << "\n";
     }
 
     if (frame.empty()) {
@@ -238,9 +244,14 @@ cv::Point Eye::run() {
     static cv::Point tl;
     static cv::Point br;
 
+cv::Mat frameLowRes;
+
+int divider = 10;
+resize(frame, frameLowRes, cv::Size(640/divider, 480/divider), cv::INTER_LINEAR);
+
+    faceDetector.detectFaceOpenCVDNN(frameLowRes, tl, br);
     // faceDetector.detectFaceOpenCVDNN(frame, tl, br);
-    // faceDetector.detectFaceOpenCVDNN(frame, tl, br);
-    cv::rectangle(frame, tl, br, cv::Scalar(253, 88, 68), 2, 4);
+    cv::rectangle(frame, tl*divider, br*divider, cv::Scalar(253, 88, 68), 2, 4);
     //currentFaceCoordinate = faceDetector.currentFaceCoordinate;
     //std::cout << "currentFaceCoordinate=" << currentFaceCoordinate << std::endl;
     //static int counterStartReadingLidarDistance = 0;
@@ -336,17 +347,17 @@ cv::Point Eye::run() {
     //shared_cout(str);
     //ss << "theta"
     //cv::putText(frame, str, cv::Point(300, 50), cv::FONT_HERSHEY_SCRIPT_SIMPLEX, 1, cv::Scalar(226, 43, 138), 2, false);
-    std::cout << "liddist1 \n";
-    ss << "lidarDist=" << lidarDistance;
-
+    // std::cout << "e0 \n";
+    ss << "LDist=" << lidarDistance;
+    // std::cout << "e01 \n";
     str.clear();
     str = ss.str();
     ss.str("");
-
+    // std::cout << "e02 \n";
     cv::putText(frame, str, cv::Point(50, 50), cv::FONT_HERSHEY_SCRIPT_SIMPLEX, 1, cv::Scalar(226, 43, 138), 2, false);
-
+    // std::cout << "e03 \n";
     imshow(selectionWindow, frame);
-
+    // std::cout << "e1 \n";
     int k = cv::waitKey(10);
 
     //// M || m = starts moving
@@ -375,6 +386,7 @@ cv::Point Eye::run() {
     imshow("map", flipedMap2d);
 
     // std::cout << " eye run2 \n";
+    // std::cout << "e2 \n";
 
     if (::wasPointChosen) {
         cv::circle(frame, ::chosenPoint, 10, cv::Scalar(205, 0, 0), 2);

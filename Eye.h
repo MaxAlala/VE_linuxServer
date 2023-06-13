@@ -46,7 +46,7 @@ class TcpProtocolClient;
 
 class Eye {
 public:
-    Eye(int camera_id, InverseForwardKinematicsModel* inverseForwardKinematicsModel_, bool shouldFlipFrame = false,  bool hasMovementDetection = false);
+    Eye(int camera_id, std::shared_ptr<InverseForwardKinematicsModel>& inverseForwardKinematicsModel_, bool shouldFlipFrame = false,  bool hasMovementDetection = false);
     Eye(const Eye& orig);
     virtual ~Eye();
     cv::Point run();
@@ -65,7 +65,7 @@ public:
     FaceDetector faceDetector;
 private:
     //std::unique_ptr<MovementDetector> movementDetector;
-    bool shouldReceiveImageFromTCP;
+    bool shouldTurnOffCam;
     bool hasMovementDetection;
     bool shouldFlipFrame;
     cv::Point chosenPoint;
@@ -75,7 +75,7 @@ private:
     cv::Mat map2d;
     std::vector<cv::Point> pointsBefore;
     std::vector<cv::Point> pointsAfter;
-    std::unique_ptr<InverseForwardKinematicsModel> inverseForwardKinematicsModel;
+    std::shared_ptr<InverseForwardKinematicsModel> inverseForwardKinematicsModel;
     const std::string selectionWindow;
     const std::string selectedPointWindow;
     std::string lidarDistance;

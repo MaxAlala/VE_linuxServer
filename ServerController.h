@@ -101,8 +101,8 @@ public:
 
     personInRoom(boost::asio::io_service &io_service,
 	boost::asio::io_service::strand &strand, chatRoom &room,
-	MotorController *motorController,
-	VoiceController *voiceController);
+	std::shared_ptr<MotorController>& motorController,
+	std::shared_ptr<VoiceController>& voiceController);
 
 	tcp::socket& socket() { return socket_; }
 
@@ -125,8 +125,8 @@ private:
 
 	std::array<char, MAX_IP_PACK_SIZE> read_msg_;
 	std::deque<std::array<char, MAX_IP_PACK_SIZE> > write_msgs_;
-	MotorController* motorController_;
-	VoiceController* voiceController_;
+	std::shared_ptr<MotorController> motorController_;
+	std::shared_ptr<VoiceController> voiceController_;
 };
 
 class stringParser
@@ -157,7 +157,7 @@ public:
 
 class ServerController {
 public:
-	ServerController(MotorController* motorController_, VoiceController* voiceController_): motorController{ motorController_ }, voiceController{ voiceController_ }{
+	ServerController(std::shared_ptr<MotorController>& motorController_, std::shared_ptr<VoiceController>& voiceController_): motorController{ motorController_ }, voiceController{ voiceController_ }{
 		serverPort = 8888;
 		camPort = 7777;
 		anglesPort = 9999;
@@ -175,8 +175,8 @@ public:
 
 	cv::Mat retrieve_data();
 	uint16_t currentLidarDistance = 0;
-    std::unique_ptr<MotorController> motorController;
-	std::unique_ptr<VoiceController> voiceController;
+    std::shared_ptr<MotorController> motorController;
+	std::shared_ptr<VoiceController> voiceController;
 	
 private:
 	int serverPort;
@@ -191,7 +191,7 @@ class server
 public:
 	server(boost::asio::io_service& io_service,
 		boost::asio::io_service::strand& strand,
-		const tcp::endpoint& endpoint, MotorController* motorController, VoiceController* voiceController);
+		const tcp::endpoint& endpoint, std::shared_ptr<MotorController>& motorController, std::shared_ptr<VoiceController>& voiceController);
 
 	private:
 
@@ -201,8 +201,8 @@ public:
 	boost::asio::io_service& io_service_;
 	boost::asio::io_service::strand& strand_;
 	tcp::acceptor acceptor_;
-	MotorController* motorController_;
-    VoiceController* voiceController_;
+	std::shared_ptr<MotorController> motorController_;
+    std::shared_ptr<VoiceController> voiceController_;
 	chatRoom room_;
 };
 

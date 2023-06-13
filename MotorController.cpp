@@ -187,7 +187,7 @@ void MotorController::startAngleUpdatingOfKinematicsModel()
 
     startRotatyEncoders();
 
-    isTheAutohomingRunning = true;
+    isTheAutohomingRunning = false;
     // startAutohoming();
     startAngleUpdatingOfKinematicsModel();
 }
@@ -723,8 +723,8 @@ void MotorController::readStatusAngle()
 
 void MotorController::startRotatyEncoders()
 {
-    char *filename = (char *)"/dev/i2c-1";
-    if ((file_i2c = open(filename, O_RDWR)) < 0)
+    string filename = "/dev/i2c-1";
+    if ((file_i2c = open(filename.c_str(), O_RDWR)) < 0)
     {
         // ERROR HANDLING: you can check errno to see what went wrong
         printf("Failed to open the i2c bus");
@@ -828,6 +828,8 @@ void MotorController::reachCcwLimit1()
                 //     currentAn
                  std::cout << "0 AXIS reached limit \n";
                 // }
+                // currentAngle[0] = currentAngle[0] - 360;
+                isNegativeCurrentAngle[0] = true;
                 return;
             }
 
@@ -891,7 +893,10 @@ std::this_thread::sleep_for(std::chrono::milliseconds(500));
 bool MotorController::isThereMovement() {
 
   for (int i = 0; i < NUMBER_OF_AXES; i++) {
-    if (isThereMovementToSpecificAngle[i]) return true;
+    if (isThereMovementToSpecificAngle[i]) { 
+        // std::cout << "there is some movement of axis = " << i << "\n";
+        return true;
+    }
   }
 
   return false;
@@ -904,6 +909,7 @@ void MotorController::startAutohoming()
     // std::thread threadAutohoming1(autohoming1);
     // threadAutohoming0.join();
     // threadAutohoming1.join();
+    isTheAutohomingRunning = true;
     std::thread threadReachLimit1(&MotorController::reachCcwLimit1, this);
     
     std::thread threadReachLimit2(&MotorController::reachCcwLimit2, this);
@@ -966,9 +972,6 @@ void MotorController::startAutohoming()
                     moveAxisCcw1(currentAxis, autohomingMicroseconds[currentAxis]);
                 }
             }
-            // }
-
-            //        usleep(2000000);
         }
         if (checkIfRobotIsAtHome())
             isTheAutohomingRunning = false;

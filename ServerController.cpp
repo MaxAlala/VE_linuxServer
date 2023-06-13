@@ -62,8 +62,8 @@ std::string chatRoom::getNickname(std::shared_ptr<participant> participant)
 
 personInRoom::personInRoom(boost::asio::io_service &io_service,
                            boost::asio::io_service::strand &strand, chatRoom &room,
-                           MotorController *motorController,
-                           VoiceController *voiceController)
+                           std::shared_ptr<MotorController>& motorController,
+                           std::shared_ptr<VoiceController>& voiceController)
     : socket_(io_service), strand_(strand), room_(room), motorController_(motorController), voiceController_(voiceController)
 {
 
@@ -695,8 +695,8 @@ void personInRoom::writeHandler(const boost::system::error_code &error)
 server::server(boost::asio::io_service &io_service,
                boost::asio::io_service::strand &strand,
                const tcp::endpoint &endpoint,
-               MotorController* motorController,
-               VoiceController* voiceController)
+               std::shared_ptr<MotorController>& motorController,
+               std::shared_ptr<VoiceController>& voiceController)
     : io_service_(io_service), strand_(strand), acceptor_(io_service, endpoint),
       motorController_(motorController), voiceController_(voiceController)
 {
@@ -743,7 +743,7 @@ bool ServerController::startServer()
         //{
 
         tcp::endpoint endpoint(tcp::v4(), serverPort);
-        std::shared_ptr<server> a_server(new server(*io_service, *strand, endpoint, motorController.get(), voiceController.get()));
+        std::shared_ptr<server> a_server(new server(*io_service, *strand, endpoint, motorController, voiceController));
         servers.push_back(a_server);
         //}
 
