@@ -52,6 +52,10 @@ find_package(Trantor CONFIG REQUIRED)
 # find_package(Brotli)
 add_definitions(-DBOOST_ERROR_CODE_HEADER_ONLY)
 add_definitions(-DBOOST_SYSTEM_NO_DEPRECATED)
+
+include(DrogonUtilities)
+include_directories(backend)
+drogon_create_views(server backend/templates ${CMAKE_CURRENT_BINARY_DIR}/backend)
 #define 
 if(Boost_FOUND)
     include_directories( ${Boost_INCLUDE_DIRS})

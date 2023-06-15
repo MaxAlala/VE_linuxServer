@@ -1,0 +1,205 @@
+<!DOCTYPE HTML>
+<html>
+	<head>
+		<meta charset="UTF-8" />
+		<%view CommonResources %>
+		<meta description="SolarBeam, the robust smart autonomous multitask turret"/>
+		<title>Homepage | SolarBeam </title>
+		<link rel="shortcut icon" href="/starIco.ico" type="image/x-icon" />
+	</head>
+	<body>
+		<div id="app">
+		<el-menu :default-active="activeIndex" class="el-menu-demo" mode="horizontal" @select="handleSelect">
+			<el-menu-item index="1">SolarBeam</el-menu-item>
+			<el-sub-menu index="2">
+				<template #title>Community</template>
+				<el-menu-item index="2-1"><a href="https://github.com/MaxAlala/VE_linuxServer/wiki" target="_blank">Gitter</a></el-menu-item>
+				<el-menu-item index="2-2"><a href="https://github.com/MaxAlala/VE_linuxServer/wiki" target="_blank">GitHub Issues</a></el-menu-item>
+			</el-sub-menu>
+			<el-menu-item index="3"><a href="https://github.com/MaxAlala/VE_linuxServer/wiki" target="_blank">Docs</a></el-menu-item>
+			<div class="line"></div>
+		</el-menu>
+		<el-row class="main-page-slide">
+			<el-col class="logo-img-container" :span="8" :xs="24">
+				<!-- <a href="https://github.com/drogonframework/drogon"><img class="shrink-img-to-fit logo-image"src="/images/drogon-concise-white.png"></a> -->
+				<a href="https://github.com/MaxAlala/VE_linuxServer/wiki"><img class="shrink-img-to-fit logo-image-square"src="/images/drogon-dragon-white.png"></a>
+			</el-col>
+			<el-col :span="16" :xs="24">
+				<section id="intro">
+					<h1>SolarBeam, the robust smart autonomous multitask turret system</h1>
+					<p>
+						Run your turret anywhere, knowing it is as robust and independent as it could be.
+					</p>
+
+					<p>
+					<el-button type="info" onclick=" window.open('https://github.com/MaxAlala/VE_linuxServer/wiki','_blank')">View releases</el-button>
+					<el-button type="info" onclick=" window.open('https://github.com/MaxAlala/VE_linuxServer/wiki','_blank')">On GitHub</el-button>
+					</p>
+				</section>
+			</el-col>
+		</el-row>
+
+		<main>
+			<section class="features_secion">
+				<div class="exclusive-line">
+					<h2>Features</h2>
+				<div>
+				<div style="padding-left:4%;padding-right:4%;">
+					<el-row :gutter="25">
+						<el-col class="grid-content" :span="8" :xs="24">
+							<div class="force-pad-bottom">
+								<h3>Fast and asynchronous</h3>
+								<p>
+									Drogon is fully asynchronous and designed to have the lowest overhead without sacrificing usablity.
+								</p>
+							</div>
+						</el-col>
+						<el-col class="grid-content" :span="8" :xs="24">
+							<div class="force-pad-bottom">
+								<h3>Portable</h3>
+								<p>
+									Drogon supports a wide range of platforms. Linux, Windows, OS X and *BSD. It also runs on different CPUs. x86, ARM, s390x, ...
+								</p>
+							</div>
+						</el-col>
+						<el-col class="grid-content" :span="8" :xs="24">
+							<div class="force-pad-bottom">
+								<h3>Single core, &gt; 150K requests/s</h3>
+								<p>
+									Drogon is multi threaded. But on a single core of a Ryzen 3700X. Drogon can process more than 150K HTTP requests per second.
+								</p>
+							</div>
+						</el-col>
+						<el-col class="grid-content" :span="8" :xs="24">
+							<div class="force-pad-bottom">
+								<h3>C++ coroutines</h3>
+								<p>
+									Coroutine support allows users to write asynchronous code without bothering with the callback hell.
+								</p>
+							</div>
+						</el-col>
+						<el-col class="grid-content" :span="8" :xs="24">
+							<div class="force-pad-bottom">
+								<h3>RDBMS & Redis</h3>
+								<p>
+									Drogon supports ORM and can connect to major open source DBs. It also speaks Redis for the in-memory goodness.
+								</p>
+							</div>
+						</el-col>
+						<el-col class="grid-content" :span="8" :xs="24">
+							<div class="force-pad-bottom">
+								<h3>More...</h3>
+								<p>
+									Drogon is more than a HTTP server. It can also act as client, speak and serve Websocket and comes with helpful utilites.
+								</p>
+							</div>
+						</el-col>
+					</el-row>
+				</div>
+			</section>
+
+			<section>
+				<div class="exclusive-line">
+					<h2>Code snippets</h2>
+					<h3>Hello World</h3>
+					<pre><code class="c++">using Callback = std::function&lt;void (const HttpResponsePtr &)&gt; ;
+
+app().registerHandler("/", [](const HttpRequestPtr& req, Callback &&callback)
+{
+	auto resp = HttpResponse::newHttpResponse();
+	resp->setBody("Hello World");
+	callback(resp);
+});</code></pre>
+				<div class="exclusive-line" style="min-height: 2em"></div>
+				<h3>File upload</h3>
+					<pre><code class="c++">app().registerHandler("/upload", [](const HttpRequestPtr& req, Callback &&callback))
+{
+	MultiPartParser fileUpload;
+	if (fileUpload.parse(req) != 0 || fileUpload.getFiles().size() == 0) {
+		// The framework handles an exception by logging it, and
+		// by responding to the client with an HTTP 500 status code.
+		throw std::runtime_error("Something went wrong");
+	}
+
+	auto &file = fileUpload.getFiles()[0];
+	file.save();
+	callback(HttpResponse::newHttpResponse());
+});</code></pre>
+				<div class="exclusive-line" style="min-height: 2em"></div>
+				<h3>DB with coroutines</h3>
+				<pre><code class="c++">app().registerHandler("/get_num_users", [](HttpRequestPtr req) -&gt; Task&lt;HttpResponsePtr&gt;
+{
+	auto client = app().getDbClient();
+	auto result = co_await client->execSqlCoro("SELECT COUNT(*) FROM users;");
+
+	auto resp = HttpResponse::newHttpResponse();
+	resp->setBody(std::to_string(result[0][0].as&lt;size_t&gt;()));
+	co_return resp;
+});</code></pre>
+				<div>
+			</section>
+
+			<section>
+				<div class="exclusive-line">
+					<h2>Join Us</h2>
+				<div>
+					
+				<el-row>
+					<el-col class="grid-content" :span="11" :xs="24">
+						<div class="force-pad-bottom pad-right-if-large">
+							<h3 class="exclusive-line text-center">Getting started</h3>
+							<p style="text-justify: auto">
+								Start using Drogon with these <a href="https://github.com/MaxAlala/VE_linuxServer/wiki">examples</a> and the <a href="https://github.com/MaxAlala/VE_linuxServer/wiki">installation instructions</a>.
+							</p>
+						</div>
+					</el-col>
+					<el-col :span="2" :xs="0"></el-col>
+					<el-col class="grid-content" :span="11" :xs="24">
+						<div class="force-pad-bottom">
+							<h3 class="exclusive-line text-center">Contribution</h3>
+							<p style="text-justify: auto">
+								We welcome anyone to contribute to the project. In fact Drogon's development is driven by the community. Feel free to <a href="https://github.com/MaxAlala/VE_linuxServer/wiki">open
+								an issue</a>, or directly make a <a href="https://github.com/MaxAlala/VE_linuxServer/wiki">Pull Request</a>. The maintainers will respond as soon as they saw it and is free.
+							</p>
+						</div>
+					<el-col>
+				</el-row>
+
+				<p>We also want to thank everyone whom contributed to the project:</p>
+				<img v-for="link in contributor_avatar_link" v-bind:src="link" class="contributor-icon">
+			</section>
+		</main>
+
+		<footer>
+			<el-row>
+				<el-col>
+					<p>
+						This website is built with Drogon, VueJS and ElementPlus.
+					</p>
+				</el-col>
+			</el-row>
+		</footer>
+		</div>
+		<script>
+			const App = {
+				data() {
+					return {
+						contributor_avatar_link: null,
+						activeIndex: '1'
+					};
+				},
+				mounted: function() {
+					var self = this;
+					axios.get("/api/v1/contributor_avatar_links").then(function(res) {
+						self.contributor_avatar_link = res.data;
+					});
+				}
+			};
+			const app = Vue.createApp(App);
+			app.use(ElementPlus);
+			app.mount("#app");
+		hljs.highlightAll();
+		</script>
+</body>
+</html>
+

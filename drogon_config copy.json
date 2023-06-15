@@ -1,7 +1,7 @@
 {
     "listeners": [
         {
-            "address": "192.168.1.15",
+            "address": "0.0.0.0",
             "port": 8848,
             "https": false
         }
