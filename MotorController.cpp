@@ -42,12 +42,12 @@
 // axisBorders[0].ccw = -30;
 // axisBorders[0].home = 120;
 
-
-MotorController::~MotorController() {
+MotorController::~MotorController()
+{
     std::cout << "~MotorController count" << inverseForwardKinematicsModel.use_count() << "\n";
     // delete inverseForwardKinematicsModel;
 }
-//updates kinematics angles
+// updates kinematics angles
 void MotorController::startAngleUpdatingOfKinematicsModelProc()
 {
     std::this_thread::sleep_for(std::chrono::milliseconds(2000));
@@ -56,19 +56,16 @@ void MotorController::startAngleUpdatingOfKinematicsModelProc()
     //     assert("ERROR! Unable to open camera\n");
     // }
 
+    std::vector<int> angles = {0, 0};
+    //  std::vector<int> v = {7, 5, 16, 8};
+    for (;;)
+    {
 
-     std::vector<int> angles = {0, 0};
-        //  std::vector<int> v = {7, 5, 16, 8};
-        for (;;)
-        {
-
-
-     angles.at(0) = currentAngle[0];
-     angles.at(1) = currentAngle[1];
-     inverseForwardKinematicsModel->updateCurrentThetasUsingCustomAngles(angles);
-    std::this_thread::sleep_for(std::chrono::milliseconds(200));
-
-        }
+        angles.at(0) = currentAngle[0];
+        angles.at(1) = currentAngle[1];
+        inverseForwardKinematicsModel->updateCurrentThetasUsingCustomAngles(angles);
+        std::this_thread::sleep_for(std::chrono::milliseconds(200));
+    }
 }
 
 void MotorController::startAngleUpdatingOfKinematicsModel()
@@ -77,8 +74,8 @@ void MotorController::startAngleUpdatingOfKinematicsModel()
     thread_.detach();
 }
 
- MotorController::MotorController(std::shared_ptr<InverseForwardKinematicsModel>& inverseForwardKinematicsModel_)
-    {
+MotorController::MotorController(std::shared_ptr<InverseForwardKinematicsModel> &inverseForwardKinematicsModel_)
+{
 
     inverseForwardKinematicsModel = inverseForwardKinematicsModel_;
     std::cout << "MotorController count" << inverseForwardKinematicsModel.use_count() << "\n";
@@ -192,27 +189,37 @@ void MotorController::startAngleUpdatingOfKinematicsModel()
     startAngleUpdatingOfKinematicsModel();
 }
 
+// axisBorders[0].cw = 250;
+// axisBorders[0].ccw = -30;
+// axisBorders[0].home = 120;
+
+// axisBorders[1].cw = -3;
+// axisBorders[1].ccw = 157;
+// axisBorders[1].home = 77;
 bool MotorController::isValidAngle(int angleToReach, int currentAxis)
 {
     if ((axisBorders[currentAxis].cw < axisBorders[currentAxis].ccw) &&
         (angleToReach < axisBorders[currentAxis].cw || angleToReach > axisBorders[currentAxis].ccw))
     {
-        std::cout << currentAxis << " axis. out of the range. wrong angle.\n";
+        std::cout << currentAxis << " axis. out of the range. wrong angle ==" << angleToReach << "\n";
         return false;
     }
     else if ((axisBorders[currentAxis].cw > axisBorders[currentAxis].ccw) &&
              (angleToReach > axisBorders[currentAxis].cw || angleToReach < axisBorders[currentAxis].ccw))
     {
-        std::cout << currentAxis << " axis. out of the range. wrong angle.\n";
+        std::cout << currentAxis << " axis. out of the range. wrong angle ==" << angleToReach << "\n";
         return false;
     }
     return true;
 }
 
-void MotorController::turretMoveAxesToSomeAngle(bool isRelativeMovement, std::vector<int>& anglesToReach, bool isTCPclient)
+void MotorController::turretMoveAxesToSomeAngle(bool isRelativeMovement, std::vector<int> &anglesToReach, bool isTCPclient)
 {
-    moveAxisToSomeAngleI(0, isRelativeMovement, anglesToReach[0], isTCPclient);
-    moveAxisToSomeAngleI(1, isRelativeMovement, anglesToReach[1], isTCPclient);
+    if (!isThereMovement())
+    {
+        moveAxisToSomeAngleI(0, isRelativeMovement, anglesToReach[0], isTCPclient);
+        moveAxisToSomeAngleI(1, isRelativeMovement, anglesToReach[1], isTCPclient);
+    }
 }
 
 void MotorController::moveAxisToSomeAngleI(int currentAxis, bool isRelativeMovement, int angleToReach, bool isTCPclient)
@@ -221,15 +228,22 @@ void MotorController::moveAxisToSomeAngleI(int currentAxis, bool isRelativeMovem
     calculatedAngleToReach = calculateAbsoluteOrRealtiveAngles(isRelativeMovement, currentAxis, angleToReach);
 
     std::cout << "calculatedAngleToReach= " << calculatedAngleToReach << " axis =" << currentAxis << "\n";
-                    
-    if (isThereMovementToSpecificAngle[currentAxis]) return;
+
+    if (isThereMovementToSpecificAngle[currentAxis])
+        return;
 
     isThereMovementToSpecificAngle[currentAxis] = true;
 
-    if (isTCPclient && !isValidAngle(calculatedAngleToReach, currentAxis)) {
+    if (isTCPclient && !isValidAngle(calculatedAngleToReach, currentAxis))
+    {
         isThereMovementToSpecificAngle[currentAxis] = false;
         ++personControllingAxis[currentAxis]->room_.name_to_id[currentAxis][personControllingAxis[currentAxis]->nicknameStr];
-        std::cout << "person=" << personControllingAxis[currentAxis]->nicknameStr <<  ", id = " << personControllingAxis[currentAxis]->room_.name_to_id[currentAxis][personControllingAxis[currentAxis]->nicknameStr] << std::endl;
+        std::cout << "person=" << personControllingAxis[currentAxis]->nicknameStr << ", id = " << personControllingAxis[currentAxis]->room_.name_to_id[currentAxis][personControllingAxis[currentAxis]->nicknameStr] << std::endl;
+        return;
+    }
+
+    if (!isValidAngle(calculatedAngleToReach, currentAxis))
+    {
         return;
     }
 
@@ -320,6 +334,12 @@ void MotorController::moveAxisToSpecificAngle1(int angleToReach, bool isTCPclien
     isThereMovementToSpecificAngle[currentAxis] = true;
     while ((currentAngle[currentAxis] != angleToReach) && isThereMovementToSpecificAngle[currentAxis])
     {
+        // was 90 need 120.
+        // #1 deceleration for the last 10 degrees. acceleration for the first 10 degrees.
+        // #2 deceleration for the last 30 %. acceleration for the first 30 %.
+
+        // #2 wins a cookie.
+        int difference = angleToReach - currentAngle[currentAxis];
         if (currentAngle[currentAxis] < angleToReach)
         {
             if (isCcwIncreasesValueOfMagnetEncoder[currentAxis])
@@ -345,8 +365,9 @@ void MotorController::moveAxisToSpecificAngle1(int angleToReach, bool isTCPclien
     }
 
     isThereMovementToSpecificAngle[currentAxis] = false;
-    
-    if (isTCPclient) {
+
+    if (isTCPclient)
+    {
         ++personControllingAxis[currentAxis]->room_.name_to_id[currentAxis][personControllingAxis[currentAxis]->nicknameStr];
         std::cout << "cur id0 = " << personControllingAxis[currentAxis]->room_.name_to_id[currentAxis][personControllingAxis[currentAxis]->nicknameStr] << std::endl;
     }
@@ -405,8 +426,9 @@ void MotorController::moveAxisToSpecificAngle2(int angleToReach, bool isTCPclien
     }
     isThereMovementToSpecificAngle[currentAxis] = false;
     ++currentMovementID[currentAxis];
-    if (isTCPclient) {
-      ++personControllingAxis[currentAxis]->room_.name_to_id[currentAxis][personControllingAxis[currentAxis]->nicknameStr];
+    if (isTCPclient)
+    {
+        ++personControllingAxis[currentAxis]->room_.name_to_id[currentAxis][personControllingAxis[currentAxis]->nicknameStr];
 
         std::cout << "cur id1 = " << personControllingAxis[currentAxis]->room_.name_to_id[currentAxis][personControllingAxis[currentAxis]->nicknameStr] << std::endl;
     }
@@ -487,35 +509,65 @@ void MotorController::move_motor2(int led, unsigned int time, int numberOfSteps)
     }
 }
 
-int MotorController::calculateAbsoluteOrRealtiveAngles(bool isRelativeMovement, int axis, int angleToReach) {
-    int calculatedAngleToReach = 0;
-                    if(isRelativeMovement) {
-                        
-                        if (!isCcwIncreasesValueOfMagnetEncoder[axis])
-                        {
-                            calculatedAngleToReach = currentAngle[axis] - angleToReach;
-                            // motorController_->moveAxisToSomeAngleI(motorController_->currentAngle[axis] - motorController_->savedReceivedAngle[axis], axis);
-                        }
-                        else 
-                        {
-                            calculatedAngleToReach = currentAngle[axis] + angleToReach;
-                            // motorController_->moveAxisToSomeAngleI(motorController_->currentAngle[axis] + motorController_->savedReceivedAngle[axis], axis);
-                        }
-                    } else {
-                        if (!isCcwIncreasesValueOfMagnetEncoder[axis])
-                        {
-                            calculatedAngleToReach = axisBorders[axis].home - angleToReach;
-                            // motorController_->moveAxisToSomeAngleI(motorController_->axisBorders[axis].home - motorController_->savedReceivedAngle[axis], axis);
-                        }
-                        else 
-                        {
-                            calculatedAngleToReach = axisBorders[axis].home + angleToReach;
-                            // motorController_->moveAxisToSomeAngleI(motorController_->axisBorders[axis].home + motorController_->savedReceivedAngle[axis], axis);
-                        }
-                    }
-        return calculatedAngleToReach;
-}
+// axisBorders[0].cw = 250;
+// axisBorders[0].ccw = -30;
+// axisBorders[0].home = 120;
 
+// axisBorders[1].cw = -3;
+// axisBorders[1].ccw = 157;
+// axisBorders[1].home = 77;
+
+// isCcwIncreasesValueOfMagnetEncoder[0] = false; // ccw decreases angle val from magnet
+// isCcwIncreasesValueOfMagnetEncoder[1] = true;  //+
+
+int MotorController::calculateAbsoluteOrRealtiveAngles(bool isRelativeMovement, int axis, int angleToReach)
+{
+    int calculatedAngleToReach = 0;
+    if (isRelativeMovement)
+    {
+
+        // 0 was 150
+        // 1 was 50
+
+        // ccw 0 decreases = false
+        // ccw 1 increases = true
+
+        // received 10 10
+
+        // must become 140 60. because positive value is ccw in math model. so we move axes 10 degree around Z ccw.
+        // need to move = 0ccw 10, 1ccw 10
+        // need to reach = 140, 60
+        //
+        if (!isCcwIncreasesValueOfMagnetEncoder[axis])
+        {
+            calculatedAngleToReach = currentAngle[axis] - angleToReach;
+            // motorController_->moveAxisToSomeAngleI(motorController_->currentAngle[axis] - motorController_->savedReceivedAngle[axis], axis);
+        }
+        else
+        {
+            calculatedAngleToReach = currentAngle[axis] + angleToReach;
+            // motorController_->moveAxisToSomeAngleI(motorController_->currentAngle[axis] + motorController_->savedReceivedAngle[axis], axis);
+        }
+    }
+    else
+    {
+        // 0 home is 120. ccw decreases val of sensor
+        // 1 home is 77. ccw inc.
+        // value 10 and 10 of math model.
+        // need to reach 110 and 87.
+        if (!isCcwIncreasesValueOfMagnetEncoder[axis])
+        {
+            calculatedAngleToReach = axisBorders[axis].home - angleToReach;
+            // motorController_->moveAxisToSomeAngleI(motorController_->axisBorders[axis].home - motorController_->savedReceivedAngle[axis], axis);
+        }
+        else
+        {
+            calculatedAngleToReach = axisBorders[axis].home + angleToReach;
+            // motorController_->moveAxisToSomeAngleI(motorController_->axisBorders[axis].home + motorController_->savedReceivedAngle[axis], axis);
+        }
+    }
+    return calculatedAngleToReach;
+}
 
 void MotorController::readVal(uint16_t *buf)
 {
@@ -767,7 +819,7 @@ void MotorController::startRotatyEncoders()
         unsigned int microsecond1 = 1500000;
         while (true)
         {
-            std::cout << "angle1=" << currentAngle[0] << ", angle2=" << currentAngle[1] << " \n"; 
+            std::cout << "angle1=" << currentAngle[0] << ", angle2=" << currentAngle[1] << " \n";
             // printf("angle1=%ld, angle2=%ld\n", currentAngle[0], currentAngle[1]);
             std::this_thread::sleep_for(std::chrono::milliseconds(500));
         }
@@ -826,7 +878,7 @@ void MotorController::reachCcwLimit1()
                 // isNegativeCurrentAngle[currentAxis] = true;
                 // if (currentAngle[currentAxis] > 0) {
                 //     currentAn
-                 std::cout << "0 AXIS reached limit \n";
+                std::cout << "0 AXIS reached limit \n";
                 // }
                 // currentAngle[0] = currentAngle[0] - 360;
                 isNegativeCurrentAngle[0] = true;
@@ -849,7 +901,7 @@ void MotorController::reachCcwLimit2()
     // // the work...
     // auto t_end = std::chrono::high_resolution_clock::now();
     // double elapsed_time_ms = 300;
-std::this_thread::sleep_for(std::chrono::milliseconds(500));
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
     int angleBefore = 0;
     int angleAfter = 0;
     int currentAxis = 1;
@@ -863,7 +915,7 @@ std::this_thread::sleep_for(std::chrono::milliseconds(500));
 
         // if (!isCcwIncreasesValueOfMagnetEncoder[currentAxis])
         // {
-            moveAxisCcw2(currentAxis, autohomingMicroseconds[currentAxis]);
+        moveAxisCcw2(currentAxis, autohomingMicroseconds[currentAxis]);
         // }
         // else
         // {
@@ -877,8 +929,8 @@ std::this_thread::sleep_for(std::chrono::milliseconds(500));
             if (angleBefore == angleAfter)
             {
                 // isNegativeCurrentAngle[currentAxis] = true;
-                
-                std::cout << "1 AXIS reached limit \n"; 
+
+                std::cout << "1 AXIS reached limit \n";
                 return;
             }
             counter = 0;
@@ -890,35 +942,37 @@ std::this_thread::sleep_for(std::chrono::milliseconds(500));
     }
 }
 
-bool MotorController::isThereMovement() {
+bool MotorController::isThereMovement()
+{
 
-  for (int i = 0; i < NUMBER_OF_AXES; i++) {
-    if (isThereMovementToSpecificAngle[i]) { 
-        // std::cout << "there is some movement of axis = " << i << "\n";
-        return true;
+    for (int i = 0; i < NUMBER_OF_AXES; i++)
+    {
+        if (isThereMovementToSpecificAngle[i])
+        {
+            std::cout << "there is some movement of axis = " << i << "\n";
+            return true;
+        }
     }
-  }
 
-  return false;
+    return false;
 }
 
 void MotorController::startAutohoming()
 {
-    if (checkIfRobotIsAtHome()) return;
+    if (checkIfRobotIsAtHome())
+        return;
     // std::thread threadAutohoming0(autohoming0);
     // std::thread threadAutohoming1(autohoming1);
     // threadAutohoming0.join();
     // threadAutohoming1.join();
     isTheAutohomingRunning = true;
     std::thread threadReachLimit1(&MotorController::reachCcwLimit1, this);
-    
+
     std::thread threadReachLimit2(&MotorController::reachCcwLimit2, this);
-    
+
     threadReachLimit1.join();
-    
 
     threadReachLimit2.join();
-
 
     auto autohoming0 = [this]()
     {
@@ -945,8 +999,8 @@ void MotorController::startAutohoming()
         // axisBorders[0].left = -60;
         // axisBorders[0].right = 300;
         // axisBorders[0].home = 120;
-    // homePositions[0] = 120;
-    // homePositions[1] = 77;
+        // homePositions[0] = 120;
+        // homePositions[1] = 77;
         int currentAxis = 0;
         while (currentAngle[currentAxis] != homePositions[currentAxis])
         {

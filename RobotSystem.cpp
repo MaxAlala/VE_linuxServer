@@ -102,10 +102,10 @@ void RobotSystem::startFaceDetectionForOneSec()
 					pixelToMotorStepsConverter->calculateAnglesUsingLogic(detectedFace.faceCoordinate, angles[0], angles[1]);
 					// stepperMotorController->setMovementCommand(angles);
 					std::cout << "angles[0]=" << angles[0] << ", angles[1]=" << -angles[1] << std::endl;
-					angles[0] = -angles[0]/2;
-					angles[1] = -angles[1]/2;
+					angles[0] = angles[0]/1;
+					angles[1] = angles[1]/1;
 					motorController->turretMoveAxesToSomeAngle(true, angles);
-
+					std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 					// sends a speaking command
 					// std::vector<char> speakingGreetingsCommand;
 					// speakingGreetingsCommand.push_back('G');
@@ -223,15 +223,17 @@ void RobotSystem::startLifeFunc()
 									// std::cout << " eye.get()->isFaceDetected()=" << eye.get()->isFaceDetected() << std::endl;
 									std::cout << " face xy=" << detectedFace.faceCoordinate.x << " " << detectedFace.faceCoordinate.y << std::endl;
 									std::cout << " detectedFaces.size()=" << visionController->faceDetector.detectedFaces.size() << std::endl;
+									std::cout << " detectedFace.faceConfidence=" << detectedFace.faceConfidence << std::endl;
+
 
 									std::vector<int> angles{0, 0};
 									pixelToMotorStepsConverter->calculateAnglesUsingLogic(detectedFace.faceCoordinate, angles[0], angles[1]);
-									std::cout << "angles[0]=" << -angles[0] << ", angles[1]=" << -angles[1] << std::endl;
-									angles[0] = -angles[0]/3;
-									angles[1] = -angles[1]/3;
+									std::cout << "angles[0]=" << angles[0] << ", angles[1]=" << angles[1] << std::endl;
+									angles[0] = angles[0];
+									angles[1] = angles[1];
 
 									motorController->turretMoveAxesToSomeAngle(true, angles);
-
+									std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 									// stepperMotorController->setMovementCommand(angles);
 								}
 							}

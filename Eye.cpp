@@ -244,12 +244,12 @@ cv::Point Eye::run() {
     static cv::Point tl;
     static cv::Point br;
 
-cv::Mat frameLowRes;
+// cv::Mat frameLowRes;
 
-int divider = 10;
-resize(frame, frameLowRes, cv::Size(640/divider, 480/divider), cv::INTER_LINEAR);
+int divider = 1;
+// resize(frame, frameLowRes, cv::Size(640/divider, 480/divider), cv::INTER_LINEAR);
 
-    faceDetector.detectFaceOpenCVDNN(frameLowRes, tl, br);
+    faceDetector.detectFaceOpenCVDNN(frame, tl, br);
     // faceDetector.detectFaceOpenCVDNN(frame, tl, br);
     cv::rectangle(frame, tl*divider, br*divider, cv::Scalar(253, 88, 68), 2, 4);
     //currentFaceCoordinate = faceDetector.currentFaceCoordinate;
@@ -335,7 +335,7 @@ resize(frame, frameLowRes, cv::Size(640/divider, 480/divider), cv::INTER_LINEAR)
 
     // put directions
     cv::putText(frame, "+", cv::Point(50, 240), cv::FONT_HERSHEY_SCRIPT_SIMPLEX, 1, cv::Scalar(226, 43, 138), 2, false);
-    cv::putText(frame, "+", cv::Point(320, 430), cv::FONT_HERSHEY_SCRIPT_SIMPLEX, 1, cv::Scalar(226, 43, 138), 2, false);
+    cv::putText(frame, "+", cv::Point(300, 50), cv::FONT_HERSHEY_SCRIPT_SIMPLEX, 1, cv::Scalar(226, 43, 138), 2, false);
 
     //ss << "th[0]=" << (int)inverseForwardKinematicsModel->fromRadToGrad(thetas[0]) << " " << "th[1]=" << (int)inverseForwardKinematicsModel->fromRadToGrad(thetas[1]);
     //str = ss.str();
