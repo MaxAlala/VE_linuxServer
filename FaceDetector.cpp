@@ -4,6 +4,7 @@ int DetectedFaceAndConfidence::counter = 0;
 int DetectedFaceAndConfidence::loopEnd = 10;
 
 
+// clears face vector every x seconds
 void FaceDetector::startUpdatingFaces() {
     static int threadStarted = 0;
     if (!isUpdatingFacesThreadStarted) {
@@ -11,10 +12,10 @@ void FaceDetector::startUpdatingFaces() {
 
         auto updatingDetectedFaces = [this]() {
             while (isUpdatingFacesThreadStarted) {
-                std::this_thread::sleep_for(std::chrono::milliseconds(500));
-                std::cout << "face point=" << currentDetectedFace.faceCoordinate.x << " " << currentDetectedFace.faceCoordinate.y << std::endl;
+                std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+                // std::cout << "face point=" << currentDetectedFace.faceCoordinate.x << " " << currentDetectedFace.faceCoordinate.y << std::endl;
 
-                std::cout << "currentDetectedFace confidence = " << currentDetectedFace.faceConfidence << "\n";
+                // std::cout << "currentDetectedFace confidence = " << currentDetectedFace.faceConfidence << "\n";
                 
                 if(!detectedFaces.empty())
                     std::cout << "detectedFaces.size() = " << detectedFaces.size() << "\n";

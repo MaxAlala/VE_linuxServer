@@ -206,16 +206,16 @@ void InverseForwardKinematicsModel::calculateDH(std::vector<int >& thetas) {
 
 
     DH_2_0 = DH[0] * DH[1];
-    std::cout << "DH1_0 \n" << DH[0] << "\n";
+    // std::cout << "DH1_0 \n" << DH[0] << "\n";
 
-    std::cout << "DH2_1 \n" << DH[1] << "\n";
+    // std::cout << "DH2_1 \n" << DH[1] << "\n";
 
-    std::cout << "DH3_2 \n" << DH[2] << "\n";
+    // std::cout << "DH3_2 \n" << DH[2] << "\n";
 
-    std::cout << "DH4_3 \n" << DH[3] << "\n";
+    // std::cout << "DH4_3 \n" << DH[3] << "\n";
 
     DH_4_0 = DH[0] * DH[1] * DH[2] * DH[3];
-    std::cout << " DH_4_0 == \n " << DH_4_0 << std::endl;
+    // std::cout << " DH_4_0 == \n " << DH_4_0 << std::endl;
 
 
     // camera coordinate system = DH3_2 in plate coordinate system DH2_1
@@ -620,8 +620,8 @@ void InverseForwardKinematicsModel::doInverseKinematics(std::vector<int >& theta
     Eigen::Vector3d secondCoordSystemOrigin = getCoordinateSystemOriginLocation(2);
     Eigen::Vector3d forthCoordSystemOrigin = getCoordinateSystemOriginLocation(4);
 
-    std::cout << "second origin = " << secondCoordSystemOrigin.x() << " " << secondCoordSystemOrigin.y() << " " << secondCoordSystemOrigin.z() << "\n";
-    std::cout << "forth origin = " << forthCoordSystemOrigin.x() << " " << forthCoordSystemOrigin.y() << " " << forthCoordSystemOrigin.z() << "\n";
+    // std::cout << "second origin = " << secondCoordSystemOrigin.x() << " " << secondCoordSystemOrigin.y() << " " << secondCoordSystemOrigin.z() << "\n";
+    // std::cout << "forth origin = " << forthCoordSystemOrigin.x() << " " << forthCoordSystemOrigin.y() << " " << forthCoordSystemOrigin.z() << "\n";
 
     Eigen::Vector3d firstVector{
         forthCoordSystemOrigin.x() - secondCoordSystemOrigin.x(),
@@ -642,9 +642,9 @@ void InverseForwardKinematicsModel::doInverseKinematics(std::vector<int >& theta
         pointWhereToGo.z() - forthCoordSystemOrigin.z()
     };
 
-    std::cout << "firstVector=" << firstVector.x() << " " << firstVector.y() << " " << firstVector.z() << std::endl;
-    std::cout << "secondVector=" << secondVector.x() << " " << secondVector.y() << " " << secondVector.z() << std::endl;
-    std::cout << "thirdVector=" << thirdVector.x() << " " << thirdVector.y() << " " << thirdVector.z() << std::endl;
+    // std::cout << "firstVector=" << firstVector.x() << " " << firstVector.y() << " " << firstVector.z() << std::endl;
+    // std::cout << "secondVector=" << secondVector.x() << " " << secondVector.y() << " " << secondVector.z() << std::endl;
+    // std::cout << "thirdVector=" << thirdVector.x() << " " << thirdVector.y() << " " << thirdVector.z() << std::endl;
 
     double magnitude1 =
         sqrt(
@@ -672,10 +672,10 @@ void InverseForwardKinematicsModel::doInverseKinematics(std::vector<int >& theta
         firstVector.y() * secondVector.y() +
         firstVector.z() * secondVector.z();
 
-    std::cout << "magnitude1=" << magnitude1 << "\n";
-    std::cout << "magnitude2=" << magnitude2 << "\n";
-    std::cout << "magnitude3=" << magnitude3 << "\n";
-    std::cout << "dotProduct=" << dotProduct << "\n";
+    // std::cout << "magnitude1=" << magnitude1 << "\n";
+    // std::cout << "magnitude2=" << magnitude2 << "\n";
+    // std::cout << "magnitude3=" << magnitude3 << "\n";
+    // std::cout << "dotProduct=" << dotProduct << "\n";
 
     std::vector<double> calculatedTheta(kinematicAxisNumber);
     
@@ -684,26 +684,26 @@ void InverseForwardKinematicsModel::doInverseKinematics(std::vector<int >& theta
     double r1 = sqrt(link_length[2] * link_length[2] + link_length[3] * link_length[3]);
 
     double thi2_2 = acos(((magnitude3*magnitude3)-magnitude1*magnitude1-magnitude2*magnitude2)/-(2*magnitude1*magnitude2));
-    std::cout << "thi2_2=" << fromRadToGrad(thi2_2) << "\n";
+    // std::cout << "thi2_2=" << fromRadToGrad(thi2_2) << "\n";
 
     double acosval = acos((double)dotProduct / (double)(magnitude1 * magnitude2));
     double thi2 = fromRadToGrad(acosval);
     double thi4 = std::atan2(10 + magnitude3, 10);
     calculatedTheta[1] = (90 - fromRadToGrad(thi4) - fromRadToGrad(std::atan2(r2, r3)));
 
-    std::cout << "thi4=" << fromRadToGrad(thi4) << "\n";
+    // std::cout << "thi4=" << fromRadToGrad(thi4) << "\n";
 
     calculatedTheta[0] = fromRadToGrad(std::atan2(pointWhereToGo[1], pointWhereToGo[0]));
 
 
-    std::cout << "r3=" << r3 << "\n";
-    std::cout << "acosval=" << acosval << "\n";
-    std::cout << "thi2=" << thi2 << "\n";
-    std::cout << "where to go:" << pointWhereToGo[0] << " " << pointWhereToGo[1] << " " << pointWhereToGo[2] << "\n";
-    std::cout << "r1 and r2: " << r1 << " " << r2 << "\n";
-    std::cout << "thi3 = atan2(r2, r3) in grad ==" << fromRadToGrad(std::atan2(r2, r3)) << "\n";
-    std::cout << "atan2(r2, r3)) " << std::atan2(r2, r3) << "\n";
-    std::cout << "doInverseKinematics. calculatedThetas = " << calculatedTheta[0] << " " << calculatedTheta[1] << std::endl;
+    // std::cout << "r3=" << r3 << "\n";
+    // std::cout << "acosval=" << acosval << "\n";
+    // std::cout << "thi2=" << thi2 << "\n";
+    // std::cout << "where to go:" << pointWhereToGo[0] << " " << pointWhereToGo[1] << " " << pointWhereToGo[2] << "\n";
+    // std::cout << "r1 and r2: " << r1 << " " << r2 << "\n";
+    // std::cout << "thi3 = atan2(r2, r3) in grad ==" << fromRadToGrad(std::atan2(r2, r3)) << "\n";
+    // std::cout << "atan2(r2, r3)) " << std::atan2(r2, r3) << "\n";
+    // std::cout << "doInverseKinematics. calculatedThetas = " << calculatedTheta[0] << " " << calculatedTheta[1] << std::endl;
     
     std::vector<int> calculatedThetaInts(kinematicAxisNumber);
     inverseKinematicsCalculatedAngles.at(0) = (int)round(calculatedTheta[0]);

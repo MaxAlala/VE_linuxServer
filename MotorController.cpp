@@ -254,7 +254,7 @@ void MotorController::moveAxisToSomeAngle1(int angleToReach, bool isTCPclient)
 {
     int currentAxis = 0;
 
-    std::cout << "111 \n";
+    // std::cout << "111 \n";
     // stop current movement if it exists
     // if (isThereMovementToSpecificAngle[currentAxis] == true)
     //     isThereMovementToSpecificAngle[currentAxis] = false;
@@ -273,7 +273,7 @@ void MotorController::moveAxisToSomeAngle1(int angleToReach, bool isTCPclient)
 void MotorController::moveAxisToSomeAngle2(int angleToReach, bool isTCPclient)
 {
     int currentAxis = 1;
-    std::cout << "111_2 \n";
+    // std::cout << "111_2 \n";
     // stop current movement if it exists
     // if (isThereMovementToSpecificAngle[currentAxis] == true)
     //     isThereMovementToSpecificAngle[currentAxis] = false;
@@ -303,7 +303,7 @@ void MotorController::moveAxisToSomeAngle2(int angleToReach, bool isTCPclient)
 // axisBorders[0].home = 120;
 void MotorController::moveAxisToSpecificAngle1(int angleToReach, bool isTCPclient)
 {
-    std::cout << "222 \n";
+    // std::cout << "222 \n";
     int currentAxis = 0;
     // if (angleToReach < axisBorders[currentAxis].cw || angleToReach > axisBorders[currentAxis].ccw)
     // {
@@ -316,7 +316,7 @@ void MotorController::moveAxisToSpecificAngle1(int angleToReach, bool isTCPclien
     //     return;
     // }
 
-    std::cout << "333 \n";
+    // std::cout << "333 \n";
     isThereMovementToSpecificAngle[currentAxis] = true;
     while ((currentAngle[currentAxis] != angleToReach) && isThereMovementToSpecificAngle[currentAxis])
     {
@@ -354,7 +354,7 @@ void MotorController::moveAxisToSpecificAngle1(int angleToReach, bool isTCPclien
 
 void MotorController::moveAxisToSpecificAngle2(int angleToReach, bool isTCPclient)
 {
-    std::cout << "222 2\n";
+    // std::cout << "222 2\n";
     int currentAxis = 1;
     // if (angleToReach < axisBorders[currentAxis].cw || angleToReach > axisBorders[currentAxis].ccw)
     // {
@@ -367,7 +367,7 @@ void MotorController::moveAxisToSpecificAngle2(int angleToReach, bool isTCPclien
     //     return;
     // }
 
-    std::cout << "333 2\n";
+    // std::cout << "333 2\n";
     isThereMovementToSpecificAngle[currentAxis] = true;
     while ((currentAngle[currentAxis] != angleToReach) && isThereMovementToSpecificAngle[currentAxis])
     {

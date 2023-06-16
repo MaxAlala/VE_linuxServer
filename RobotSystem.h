@@ -35,20 +35,28 @@ void startLidarDistanceDetection();
 void startUpdateTimeOfLifeEveryMinuteThread();
 void startUpdateTimeOfLifeEveryMinute();
 void sendStartingTime();
+int timeOfbeingOnline;
+std::string timeOfStartUTC; 
 std::shared_ptr<MotorController> motorController;
 std::shared_ptr<VoiceController> voiceController;
 std::shared_ptr<ServerController> serverController;
 std::shared_ptr<Eye> visionController;
 std::shared_ptr<InverseForwardKinematicsModel> inverseForwardKinematicsModel;
 std::shared_ptr<PixelToMotorStepsConverter> pixelToMotorStepsConverter;
-std::shared_ptr<WebServer> ws;
+// std::shared_ptr<WebServer> ws;
 drogon::orm::DbClientPtr db;
-bool shouldTurnOffVision = false;
+bool isVisionOn = false;
 uint16_t currentLidarDistance = 0;
 int turretID = 1;
-std::string currentStartTimeUTC; 
+
+static void setIsPatrolOn(bool isPatrolOnToSet) {
+    isPatrolOn = isPatrolOnToSet;
+}
+
 private:
   States currentState;
   CurrentRoboticSystem currentRoboticSystem;
+  static int isPatrolOn;
+  bool wasPatrolThreadStarted = false;
 };
 

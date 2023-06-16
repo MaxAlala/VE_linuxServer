@@ -56,6 +56,7 @@ add_definitions(-DBOOST_SYSTEM_NO_DEPRECATED)
 include(DrogonUtilities)
 include_directories(backend)
 drogon_create_views(server backend/templates ${CMAKE_CURRENT_BINARY_DIR}/backend)
+file(COPY configs/webConfig.json DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 #define 
 if(Boost_FOUND)
     include_directories( ${Boost_INCLUDE_DIRS})

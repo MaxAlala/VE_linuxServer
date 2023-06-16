@@ -17,7 +17,7 @@ RobotSystem::RobotSystem()
 	std::cout << "RobotSystem count" << inverseForwardKinematicsModel.use_count() << "\n";
 
 	motorController = std::make_shared<MotorController>(inverseForwardKinematicsModel);
-	ws.reset(new WebServer());
+	// ws.reset(new WebServer());
 	voiceController.reset(new VoiceController());
 	serverController.reset(new ServerController(motorController, voiceController));
 
@@ -25,9 +25,9 @@ RobotSystem::RobotSystem()
 
 	currentState = States::ALIVE;
 	currentRoboticSystem = CurrentRoboticSystem::TURRET;
-	shouldTurnOffVision = true;
+	isVisionOn = true;
 
-	if (!shouldTurnOffVision)
+	if (isVisionOn)
 	{
 		visionController.reset(new Eye(0, inverseForwardKinematicsModel, false, false));
 	}
@@ -57,12 +57,12 @@ void RobotSystem::startFaceDetectionForOneSec()
 				++counter;
 				if (visionController->isFaceDetected())
 				{
-					std::cout << "face was detected \n";
+					// std::cout << "face was detected \n";
 					counter = 0;
 				}
-				std::cout << "counter = " << counter << "\n";
+				// std::cout << "counter = " << counter << "\n";
 
-				if (counter > 20)
+				if (counter > 40)
 					shouldStopFaceDetectionBecauseNoFaceWasDetected = true;
 			}
 		};
@@ -70,23 +70,23 @@ void RobotSystem::startFaceDetectionForOneSec()
 		std::thread detectFaceFor2SecThread(detectFaceFor2SecLmbda);
 		detectFaceFor2SecThread.detach();
 
-		auto greetings_timer_lmbda = [&canSendGreetings, this]()
-		{
-			while (!canSendGreetings)
-			{
-				canSendGreetings = true;
-				std::this_thread::sleep_for(std::chrono::milliseconds(2000));
-			}
-		};
+		// auto greetings_timer_lmbda = [&canSendGreetings, this]()
+		// {
+		// 	while (!canSendGreetings)
+		// 	{
+		// 		canSendGreetings = true;
+		// 		std::this_thread::sleep_for(std::chrono::milliseconds(2000));
+		// 	}
+		// };
 
-		std::thread greetings_timer_th(greetings_timer_lmbda);
-		greetings_timer_th.detach();
+		// std::thread greetings_timer_th(greetings_timer_lmbda);
+		// greetings_timer_th.detach();
 
 		while (!shouldStopFaceDetectionBecauseNoFaceWasDetected)
 		{
 
 			// sends command to direct a robot`s tool to detected face
-			std::cout << "FaceDetectionProcess \n";
+			// std::cout << "FaceDetectionProcess \n";
 			if (visionController->isFaceDetected())
 			{
 				DetectedFaceAndConfidence detectedFace = visionController->faceDetector.currentDetectedFace;
@@ -95,19 +95,23 @@ void RobotSystem::startFaceDetectionForOneSec()
 				if (detectedFace.faceConfidence > threshold)
 				{
 					// std::cout << " eye.get()->isFaceDetected()=" << eye.get()->isFaceDetected() << std::endl;
-					std::cout << " face xy=" << detectedFace.faceCoordinate.x << " " << detectedFace.faceCoordinate.y << std::endl;
-					std::cout << " detectedFaces.size()=" << visionController->faceDetector.detectedFaces.size() << std::endl;
+					// std::cout << " face xy=" << detectedFace.faceCoordinate.x << " " << detectedFace.faceCoordinate.y << std::endl;
+					// std::cout << " detectedFaces.size()=" << visionController->faceDetector.detectedFaces.size() << std::endl;
 
 					std::vector<int> angles{0, 0};
 					pixelToMotorStepsConverter->calculateAnglesUsingLogic(detectedFace.faceCoordinate, angles[0], angles[1]);
 					// stepperMotorController->setMovementCommand(angles);
+					std::cout << "angles[0]=" << angles[0] << ", angles[1]=" << -angles[1] << std::endl;
+					angles[0] = -angles[0]/2;
+					angles[1] = -angles[1]/2;
 					motorController->turretMoveAxesToSomeAngle(true, angles);
+
 					// sends a speaking command
 					// std::vector<char> speakingGreetingsCommand;
 					// speakingGreetingsCommand.push_back('G');
 					// speakingGreetingsCommand.push_back('R');
 
-					voiceController->sayGreetings();
+					// voiceController->sayGreetings();
 				}
 			}
 			std::this_thread::sleep_for(std::chrono::milliseconds(100));
@@ -177,7 +181,6 @@ void RobotSystem::startLifeFunc()
 			int k = cv::waitKey(10);
 
 			static int z = 0;
-			static int p = 0;
 
 			// v || V = starts homing
 			if (k == 118 || k == 86)
@@ -223,6 +226,10 @@ void RobotSystem::startLifeFunc()
 
 									std::vector<int> angles{0, 0};
 									pixelToMotorStepsConverter->calculateAnglesUsingLogic(detectedFace.faceCoordinate, angles[0], angles[1]);
+									std::cout << "angles[0]=" << -angles[0] << ", angles[1]=" << -angles[1] << std::endl;
+									angles[0] = -angles[0]/3;
+									angles[1] = -angles[1]/3;
+
 									motorController->turretMoveAxesToSomeAngle(true, angles);
 
 									// stepperMotorController->setMovementCommand(angles);
@@ -318,22 +325,25 @@ void RobotSystem::startLifeFunc()
 
 			// startPatrolTerritory();
 			//  P || p = starts patrolling
-			if (k == 80 || k == 112)
+			// if (k == 80 || k == 112)
+			// {
+
+			// std::cout << "p was pressed \n";
+			// static bool shouldThreadRun = false;
+			// if (isPatrolOn == false)
+			// {
+			// 	// shouldThreadRun = true;
+			// 	isPatrolOn = true;
+			// 	std::cout << "isPatrolOn is 1 now \n";
+			// }
+			// else if (isPatrolOn == true)
+			// {
+			// 	std::cout << "isPatrolOn is 0 now \n";
+			// 	isPatrolOn = false;
+			// }
+			// std::cout << "111 \n";
+			if (isPatrolOn)
 			{
-				static std::vector<int> angles;
-				std::cout << "p was pressed \n";
-				// static bool shouldThreadRun = false;
-				if (p == 0)
-				{
-					// shouldThreadRun = true;
-					p++;
-					std::cout << "p is 1 now \n";
-				}
-				else if (p == 1)
-				{
-					std::cout << "p is 0 now \n";
-					p = 0;
-				}
 				// else
 				//{
 				//	p = 0;
@@ -348,13 +358,14 @@ void RobotSystem::startLifeFunc()
 				static bool shouldSkipOneLoop = false;
 				// std::cout << motorController->isTheAutohomingRunning << "=isTheAutohomingRunning=\n";
 
-				if (!motorController->isTheAutohomingRunning && !motorController->isThereMovement())
+				if (!motorController->isTheAutohomingRunning && !motorController->isThereMovement() && !wasPatrolThreadStarted)
 				{
-					std::cout << "t2 \n";
+					// std::cout << "t2 \n";
 					auto autohoming0 = [this]()
 					{
+						static std::vector<int> angles;
 						int ic = 0;
-						while (p == 1)
+						while (isPatrolOn == 1)
 						{
 							// std::cout << "w123 \n";
 							// std::cout << "t3 \n";
@@ -423,9 +434,9 @@ void RobotSystem::startLifeFunc()
 							// obstacle coordinate in 0 coordinate system
 							Eigen::Vector3d obstacleCoordinate = visionController->calculateObstacleCoordinate();
 
-							std::cout << "i is " << ic << "\n";
-							std::cout << "pointToScan is " << pointToScan.x() << " " << pointToScan.y() << " " << pointToScan.z() << "\n";
-							std::cout << "obstacleCoordinate is " << obstacleCoordinate.x() << " " << obstacleCoordinate.y() << " " << obstacleCoordinate.z() << "\n";
+							// std::cout << "i is " << ic << "\n";
+							// std::cout << "pointToScan is " << pointToScan.x() << " " << pointToScan.y() << " " << pointToScan.z() << "\n";
+							// std::cout << "obstacleCoordinate is " << obstacleCoordinate.x() << " " << obstacleCoordinate.y() << " " << obstacleCoordinate.z() << "\n";
 							visionController->drawCircleAtMap2d(cv::Point(pointToScan.x(), pointToScan.y()), cv::Scalar(0, 0, 255));
 							visionController->drawCircleAtMap2d(cv::Point(obstacleCoordinate.x(), obstacleCoordinate.y()), cv::Scalar(255, 0, 0));
 
@@ -492,8 +503,9 @@ void RobotSystem::startLifeFunc()
 
 							// stepperMotorController->setMovementCommand(angles, false);
 							motorController->turretMoveAxesToSomeAngle(false, angles);
+							std::this_thread::sleep_for(std::chrono::milliseconds(5000));
 							//////////////////////////////////////
-							// startFaceDetectionForOneSec();
+							startFaceDetectionForOneSec();
 
 							//////////////////////////////////////
 							std::this_thread::sleep_for(std::chrono::milliseconds(200));
@@ -505,12 +517,17 @@ void RobotSystem::startLifeFunc()
 								// break;
 							}
 						}
+
+						this->wasPatrolThreadStarted = false;
 					};
 					// std::cout << "t4 \n";
+					wasPatrolThreadStarted = true;
 					std::thread startP(autohoming0);
 					startP.detach();
 				}
 			}
+
+			// }
 
 			// // K || k = starts scanning
 			// if (k == 75 || k == 107) {
@@ -666,7 +683,7 @@ void RobotSystem::startLidarDistanceDetectionProc()
 				{
 					currentLidarDistance = cordist;
 					// std::cout << currentLidarDistance << "currentLidarDistance \n";
-					if (!shouldTurnOffVision)
+					if (isVisionOn)
 						visionController->setCurrentLidarDistance(std::to_string(currentLidarDistance));
 				}
 				cordist = 0;
@@ -692,21 +709,42 @@ void RobotSystem::startUpdateTimeOfLifeEveryMinute()
 {
 	while (1)
 	{
-		// do something
-		std::this_thread::sleep_for(60s); // this function holds the foo execution for 60 sec
 
 		// INSERT INTO SolarBeamStartTime VALUES (1, '2016-06-22 19:10:25-07');
 		// std::string sqlUpdateStartTime = "INSERT INTO SolarBeamStartTime VALUES (1, "<< "\'" << 2016-06-22 19:10:25-07 <<  "\');";
 		std::cout << "time was updated \n";
 		db->execSqlAsync(
 			"UPDATE SolarBeam set timeoflifeinminutes = timeoflifeinminutes + 1 WHERE id = 1",
-			[](const drogon::orm::Result &result)
+			[this](const drogon::orm::Result &result)
+			{
+				// std::cout << result.size() << " rows selected!" << std::endl;
+				// int i = 0;
+				// for (auto row : result)
+				// {
+				// 	std::cout << i++ << ": timeoflifeinminutes is " << row["timeoflifeinminutes"].as<std::string>() << std::endl;
+				// 	timeOfbeingOnline = std::stoi(row["timeoflifeinminutes"].as<std::string>());
+
+				// 	ws->timeOfbeingOnline = timeOfbeingOnline;
+				// }
+			},
+			[](const drogon::orm::DrogonDbException &e)
+			{
+				std::cerr << "error:" << e.base().what() << std::endl;
+			});
+
+		db->execSqlAsync(
+			"SELECT timeoflifeinminutes FROM SolarBeam WHERE id = 1",
+			[this](const drogon::orm::Result &result)
 			{
 				std::cout << result.size() << " rows selected!" << std::endl;
 				int i = 0;
 				for (auto row : result)
 				{
 					std::cout << i++ << ": timeoflifeinminutes is " << row["timeoflifeinminutes"].as<std::string>() << std::endl;
+					timeOfbeingOnline = std::stoi(row["timeoflifeinminutes"].as<std::string>().c_str());
+					// std::cout << timeOfbeingOnline << "\n";
+					WebServer::setTimeOfbeingOnline(timeOfbeingOnline);
+					// std::cout << "ws->timeOfbeingOnline " << ws->getTimeOfbeingOnline() << "\n";
 				}
 			},
 			[](const drogon::orm::DrogonDbException &e)
@@ -714,6 +752,12 @@ void RobotSystem::startUpdateTimeOfLifeEveryMinute()
 				std::cerr << "error:" << e.base().what() << std::endl;
 			});
 		// should add an exit condition or this function will non stop
+		// ws->setTimeOfbeingOnline(666);
+		// std::cout << "ws->timeOfbeingOnline22222 " << ws->getTimeOfbeingOnline() << "\n";
+		// ws->setTimeOfbeingOnline(666);
+		// std::cout << "*ws1=" << ws.get() << "\n";
+		// do something
+		std::this_thread::sleep_for(60s); // this function holds the foo execution for 60 sec
 	}
 }
 
@@ -731,7 +775,7 @@ void RobotSystem::startLidarDistanceDetection()
 
 void RobotSystem::startWebServer()
 {
-	std::thread thread_(&WebServer::startWebServer, ws.get());
+	std::thread thread_(WebServer::startWebServer);
 	thread_.detach();
 }
 
@@ -750,11 +794,13 @@ void RobotSystem::sendStartingTime()
 			int i = 0;
 			for (auto row : result)
 			{
-				currentStartTimeUTC = row["current_timestamp"].as<std::string>();
-				std::cout << i++ << ": currentStartTimeUTC is " << currentStartTimeUTC << std::endl;
+				timeOfStartUTC = row["current_timestamp"].as<std::string>();
+				std::cout << i++ << ": currentStartTimeUTC is " << timeOfStartUTC << std::endl;
 			}
+			WebServer::timeOfStartUTC = this->timeOfStartUTC;
+
 			// std::cout << " currentStartTimeUTC= " << currentStartTimeUTC << "\n";
-			std::string psqlInsertRequest = "INSERT INTO SolarBeamStartTime VALUES (1, \'" + currentStartTimeUTC + "\');";
+			std::string psqlInsertRequest = "INSERT INTO SolarBeamStartTime VALUES (1, \'" + timeOfStartUTC + "\');";
 			// std::cout << "psqlInsertRequest=" << psqlInsertRequest << std::endl;
 			db->execSqlAsync(
 				psqlInsertRequest,
@@ -785,12 +831,18 @@ void RobotSystem::startRobotSystem()
 	startLidarDistanceDetection();
 	shared_cout(" STart1.1111 \n");
 	startWebServer();
-	std::this_thread::sleep_for(200ms);
+	std::this_thread::sleep_for(1000ms);
+	shared_cout(" STart1.11111 \n");
 	db = drogon::app().getDbClient();
+	shared_cout(" STart1.11116 \n");
 	startUpdateTimeOfLifeEveryMinuteThread();
+	shared_cout(" STart1.11117 \n");
 	sendStartingTime();
 	// start
-	if (!shouldTurnOffVision)
+	shared_cout(" STart1.11118 \n");
+	if (isVisionOn)
 		startLifeFunc();
 	shared_cout(" STart1.11111 \n");
 }
+
+int RobotSystem::isPatrolOn = 0;

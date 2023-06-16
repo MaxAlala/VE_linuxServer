@@ -3,10 +3,44 @@ using namespace drogon;
 
 #include "WebServer.h"
 #include <string>
+#include "RobotSystem.h"
+
+void WebServer::togglePatrol(const HttpRequestPtr &req,
+                      std::function<void(const HttpResponsePtr &)> &&callback,
+                      std::string &&togglePatrol)
+    //   const std::string &password)
+    {
+        LOG_DEBUG << "shouldPatrolBeRunning: " << togglePatrol << " \n";
+        // std::cout << "shouldPatrolBeRunning: " << togglePatrol << " \n";
+
+        if (!strcmp(togglePatrol.c_str(), "true"))
+        {
+
+            isPatrolOn = true;
+            std::cout << "togglePatrol.c_str() == true"
+                      << " \n";
+        }
+        else if (!strcmp(togglePatrol.c_str(), "false"))
+        {
+            std::cout << "togglePatrol.c_str() == false"
+                      << " \n";
+            isPatrolOn = false;
+        }
+        // Authentication algorithm, read database, verify, identify, etc...
+        //...
+        RobotSystem::setIsPatrolOn(isPatrolOn);
+        Json::Value ret;
+        //  ret["result"]="ok";
+        //  ret["token"]=drogon::utils::getUuid();
+        auto resp = HttpResponse::newHttpResponse();
+        resp->setStatusCode(k200OK);
+        callback(resp);
+    }
 
 WebServer::WebServer()
 {
-shouldPatrolBeRunning = false;
+    isPatrolOn = false;
+    timeOfbeingOnline = 1;
     // host=localhost port=5432 dbname=SolarBeam connect_timeout=10 user='pi' password=''
     //  std::string connInfo = "host=localhost port=5432 dbname=solarbeam connect_timeout=10 user=pi password=\'1qaz2ws3E4\'";
     //  db = drogon::orm::DbClient::newPgClient(connInfo, 1);
@@ -193,6 +227,11 @@ void WebServer::startWebServer()
     LOG_INFO << "Server running on " << webServerIpAddr << ":8848 \n";
     // drogon::app().loadConfigFile("../configs/webConfig.json");
     // app().addListener(webServerIpAddr, 8848).run();
+    // std::cout << "app().timeOfbeingOnline  "<< app().timeOfbeingOnline << std::endl;
     app().loadConfigFile("../configs/webConfig.json").run();
-
 }
+std::string WebServer::webServerIpAddr = "192.168.1.15";
+bool WebServer::isPatrolOn;
+int WebServer::timeOfbeingOnline;
+std::string WebServer::timeOfStartUTC;
+
