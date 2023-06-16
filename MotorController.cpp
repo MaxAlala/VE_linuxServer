@@ -133,7 +133,9 @@ MotorController::MotorController(std::shared_ptr<InverseForwardKinematicsModel> 
 
     speedDecreaser1 = 3;
     speedDecreaser2 = 3;
-
+    // 1 sec = 1000 ms = 1 000 000 us/
+    // here every 0.15 sec rotation happens = 6 or 7 times per sec
+    // 150000 is fast
     autohomingMicroseconds[0] = 50000 / speedIncreaser * speedDecreaser1;
     autohomingMicroseconds[1] = 50000 / speedIncreaser * speedDecreaser2;
 
@@ -300,66 +302,195 @@ void MotorController::moveAxisToSomeAngle2(int angleToReach, bool isTCPclient)
     std::thread threadMoveToSpecificAngle(lambdaMoveAxisToSpecificAngle);
     threadMoveToSpecificAngle.detach();
 }
-// axisBorders[0].left = -60;
-// axisBorders[0].right = 300;
-// axisBorders[0].home = 120;
 
-// axisBorders[1].left = -13;
-// axisBorders[1].right = 167;
-// axisBorders[1].home = 77;
+int MotorController::getSpeedtimeForAccelerationZone(int i, int stepsNum)
+{
+    int timeOfslowestSpeed = 450000;
 
-// axisBorders[1].left = -3;
-// axisBorders[1].right = 157;
-// axisBorders[1].home = 77;
+    float startRad = 1.57f;
 
-// axisBorders[0].left = -30;
-// axisBorders[0].right = 260;
-// axisBorders[0].home = 120;
+    float curRad = 1.57f;
+    float endRad = 0.33f;
+    float radInc = (curRad - endRad) / stepsNum;
+
+    curRad = startRad - radInc * i;
+    if (curRad < endRad)
+        curRad = endRad;
+
+    int returnSpeedTime = timeOfslowestSpeed * sin(curRad);
+
+    std::cout << "getAccel" << i << " " << curRad << " " << sin(curRad) << " " << returnSpeedTime << std::endl;
+
+    return returnSpeedTime;
+}
+    // int timeOfslowestSpeed = 450000;
+
+    // float startRad = 1.57f;
+
+    // float curRad = 1.57f;
+    // float endRad = 0.33f;
+    // float radInc = (curRad - endRad) / stepsNum;
+
+
+    // curRad = startRad - radInc * i;
+    // if (curRad < endRad) curRad = endRad;
+
+    // int returnSpeedTime = timeOfslowestSpeed * sin(curRad);
+
+    // std::cout << i << " " << curRad << " " << sin(curRad) << " " << returnSpeedTime << std::endl;
+
+    // return returnSpeedTime;
+int MotorController::getSpeedtimeForDecelerationZone(int i, int stepsNum)
+{
+    int timeOfslowestSpeed = 450000;
+
+    float endRad = 1.57f;
+    float startRad = 0.33f;
+    float curRad = 0;
+
+    float radInc = (endRad - curRad) / stepsNum;
+
+    curRad = startRad + radInc * i;
+    if (curRad > endRad)
+        curRad = endRad;
+
+    int returnSpeedTime = timeOfslowestSpeed * sin(curRad);
+
+    std::cout << "getDec" << i << " " << curRad << " " << sin(curRad) << " " << returnSpeedTime << std::endl;
+
+    return returnSpeedTime;
+}
+
 void MotorController::moveAxisToSpecificAngle1(int angleToReach, bool isTCPclient)
 {
     // std::cout << "222 \n";
     int currentAxis = 0;
-    // if (angleToReach < axisBorders[currentAxis].cw || angleToReach > axisBorders[currentAxis].ccw)
+
+    // was 90 need 120.
+    // #1 deceleration for the last 10 degrees. acceleration for the first 10 degrees.
+    // #2 deceleration for the last 30 %. acceleration for the first 30 %.
+
+    // #2 wins a cookie. So, how to do it?
+    // what parameters do we have to manipulate with?
+    // digitalWrite(dirPins[axisIndex], forwardValue[axisIndex]);
+    // move_motor(stepPins[axisIndex], microseconds, autohomingSteps[axisIndex]); // high = ccw
+    // microseconds = time between shaft rotation
+    // autohomingSteps[axisIndex] = little amount of step to move
+
+    // void MotorController::move_motor2(int led, unsigned int time, int numberOfSteps)
     // {
-    //     std::cout << currentAxis << " axis reached Axis border \n";
 
-    //     ++currentMovementID[currentAxis];
-    //     ++personControllingAxis[currentAxis]->room_.name_to_id[currentAxis][personControllingAxis[currentAxis]->nicknameStr];
-    //     std::cout << "cur id0 = " << personControllingAxis[currentAxis]->room_.name_to_id[currentAxis][personControllingAxis[currentAxis]->nicknameStr] << std::endl;
-    //     isThereMovementToSpecificAngle[currentAxis] = false;
-    //     return;
+    //     for (int i = 0; i < numberOfSteps; i++)
+    //     {
+    //         digitalWrite(led, HIGH);
+    //         //    usleep(time);
+    //         std::this_thread::sleep_for(std::chrono::nanoseconds(time));
+    //         digitalWrite(led, LOW);
+    //         //    usleep(time);
+    //         std::this_thread::sleep_for(std::chrono::nanoseconds(time));
+    //     }
     // }
+    // than closer to the end=lesser degrees left to go, then time becomes bigger = movement slower.
+    // $ have some function = sin cos.
 
-    // std::cout << "333 \n";
+    // max speed is 150k us. min speed is 40k. starting from 40k we accelerate to 150k and vise versa reaching the end
+    //  for (float ph = 0; ph < 1.57f; ph += 0.05f) {
+    //      float pos_m0 = 150000 * sin(ph);
+    //      //float pos_m1 = 20000.0f * sin(ph);
+    //      std::cout << ph << " " << sin(ph) << " " << pos_m0 << std::endl;
+    //  }
+    int minimalAngle = 4;
+    int difference = abs(angleToReach - currentAngle[currentAxis]);
+    int currentMicrosec = 0;
+    int maxSpeedTime = 150000;
+    int minSpeedTime = 450000;
+    int borderPercentage = 0.3;
+    int thirtyPercentsOfAngles = difference * borderPercentage;
+    int savedCurrentAngle = currentAngle[currentAxis];
+    int i = 0;
+    int i2 = 0;
+    int firstSwitchAngle;
+    int secondSwitchAngle;
+    class Zones
+    {
+    public:
+        int accelerationZone[2];
+        int decelerationZone[2];
+    };
+    Zones z;
+
+    if (currentAngle[currentAxis] < angleToReach)
+    {
+        firstSwitchAngle = currentAngle[currentAxis] + difference * borderPercentage;
+        secondSwitchAngle = currentAngle[currentAxis] + difference * borderPercentage * 2;
+        z.accelerationZone[0] = currentAngle[currentAxis];
+        z.accelerationZone[1] = currentAngle[currentAxis] + difference * borderPercentage;
+
+        z.decelerationZone[0] = currentAngle[currentAxis] + difference * borderPercentage * 2;
+        z.decelerationZone[1] = angleToReach;
+    }
+    else if (currentAngle[currentAxis] > angleToReach)
+    {
+        firstSwitchAngle = currentAngle[currentAxis] - difference * borderPercentage;
+        secondSwitchAngle = currentAngle[currentAxis] - difference * borderPercentage * 2;
+
+        // from small to big
+        z.accelerationZone[0] = currentAngle[currentAxis] - difference * borderPercentage;
+        z.accelerationZone[1] = currentAngle[currentAxis];
+
+        z.decelerationZone[0] = angleToReach;
+        z.decelerationZone[1] = currentAngle[currentAxis] - difference * borderPercentage * 2;
+    }
+
     isThereMovementToSpecificAngle[currentAxis] = true;
+int numberOfStepsInOneDegree = 5000;
     while ((currentAngle[currentAxis] != angleToReach) && isThereMovementToSpecificAngle[currentAxis])
     {
-        // was 90 need 120.
-        // #1 deceleration for the last 10 degrees. acceleration for the first 10 degrees.
-        // #2 deceleration for the last 30 %. acceleration for the first 30 %.
+        if (difference >= minimalAngle)
+        {
+            if (currentAngle[currentAxis] > z.accelerationZone[0] && currentAngle[currentAxis] < z.accelerationZone[1])
+            {
+                currentMicrosec = getSpeedtimeForAccelerationZone(i, abs(z.accelerationZone[1]-z.accelerationZone[0])*numberOfStepsInOneDegree);
+                i++;
+                std::cout << "accelZone \n";
+            }
+            else if (currentAngle[currentAxis] > z.decelerationZone[0] && currentAngle[currentAxis] < z.decelerationZone[1])
+            {
+                currentMicrosec = getSpeedtimeForDecelerationZone(i2, abs(z.accelerationZone[1]-z.accelerationZone[0])*numberOfStepsInOneDegree);
+                i2++;
+                std::cout << "decZone \n";
+            }
+            else
+            {
+                currentMicrosec = maxSpeedTime;
+            }
+        }
+        else
+        {
+            currentMicrosec = minSpeedTime;
+        }
 
-        // #2 wins a cookie.
-        int difference = angleToReach - currentAngle[currentAxis];
+        int currentMicrosec = 0;
         if (currentAngle[currentAxis] < angleToReach)
         {
             if (isCcwIncreasesValueOfMagnetEncoder[currentAxis])
             {
-                moveAxisCcw1(currentAxis, microseconds[currentAxis]);
+                moveAxisCcw1(currentAxis, currentMicrosec);
             }
             else
             {
-                moveAxisCw1(currentAxis, microseconds[currentAxis]);
+                moveAxisCw1(currentAxis, currentMicrosec);
             }
         }
         else if (currentAngle[currentAxis] > angleToReach)
         {
             if (isCcwIncreasesValueOfMagnetEncoder[currentAxis])
             {
-                moveAxisCw1(currentAxis, microseconds[currentAxis]);
+                moveAxisCw1(currentAxis, currentMicrosec);
             }
             else
             {
-                moveAxisCcw1(currentAxis, microseconds[currentAxis]);
+                moveAxisCcw1(currentAxis, currentMicrosec);
             }
         }
     }
