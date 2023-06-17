@@ -10,7 +10,7 @@ class AccelerationDeceleration
     // 1000 steps/71 = 14 degree
     // all is right.
 public:
-    AccelerationDeceleration(int currentAngle_, int angleToReach_);
+    AccelerationDeceleration(int currentAngle_, int angleToReach_, int numberOfStepsInOneDegree_);
     void display();
     int generateMicrosec(int currentAngle);
     int getSpeedtimeForAccelerationZone(int i, int stepsNum);

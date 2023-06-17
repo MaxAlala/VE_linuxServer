@@ -102,8 +102,8 @@ void RobotSystem::startFaceDetectionForOneSec()
 					pixelToMotorStepsConverter->calculateAnglesUsingLogic(detectedFace.faceCoordinate, angles[0], angles[1]);
 					// stepperMotorController->setMovementCommand(angles);
 					std::cout << "angles[0]=" << angles[0] << ", angles[1]=" << -angles[1] << std::endl;
-					angles[0] = angles[0]/1;
-					angles[1] = angles[1]/1;
+					angles[0] = angles[0] / 1;
+					angles[1] = angles[1] / 1;
 					motorController->turretMoveAxesToSomeAngle(true, angles);
 					std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 					// sends a speaking command
@@ -224,7 +224,6 @@ void RobotSystem::startLifeFunc()
 									std::cout << " face xy=" << detectedFace.faceCoordinate.x << " " << detectedFace.faceCoordinate.y << std::endl;
 									std::cout << " detectedFaces.size()=" << visionController->faceDetector.detectedFaces.size() << std::endl;
 									std::cout << " detectedFace.faceConfidence=" << detectedFace.faceConfidence << std::endl;
-
 
 									std::vector<int> angles{0, 0};
 									pixelToMotorStepsConverter->calculateAnglesUsingLogic(detectedFace.faceCoordinate, angles[0], angles[1]);
@@ -376,6 +375,7 @@ void RobotSystem::startLifeFunc()
 
 							if (!shouldSkipOneLoop)
 							{
+								// if not first loop. InverseKinematics should calculate some angle first.
 								if (ic != 0)
 									// if calculated unequals to current angles = then move to calculated. should move a turret to calculated angles
 									if ((int)(inverseForwardKinematicsModel->inverseKinematicsCalculatedAngles.at(0) != (int)inverseForwardKinematicsModel->getThetasWhereStartIsZero().at(0) ||
@@ -481,7 +481,7 @@ void RobotSystem::startLifeFunc()
 							angles.push_back((int)round(inverseForwardKinematicsModel->getInverseKinematicsAngles()[0]));
 							angles.push_back((int)round(inverseForwardKinematicsModel->getInverseKinematicsAngles()[1]));
 
-							angles[1] = -angles[1];
+							angles[1] = angles[1];
 							std::cout << " patrolAngles togo=" << std::to_string(angles[0]) << " " << std::to_string(angles[1]) << "\n";
 							// std::vector<AxisBorders> axisBorders;
 
@@ -505,7 +505,13 @@ void RobotSystem::startLifeFunc()
 
 							// stepperMotorController->setMovementCommand(angles, false);
 							motorController->turretMoveAxesToSomeAngle(false, angles);
-							std::this_thread::sleep_for(std::chrono::milliseconds(5000));
+						
+							std::this_thread::sleep_for(std::chrono::milliseconds(200));	
+							while (motorController->isThereMovement())
+							{
+								std::this_thread::sleep_for(std::chrono::milliseconds(200));
+							}
+
 							//////////////////////////////////////
 							startFaceDetectionForOneSec();
 

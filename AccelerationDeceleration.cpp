@@ -1,11 +1,19 @@
 #include "AccelerationDeceleration.h"
-AccelerationDeceleration::AccelerationDeceleration(int currentAngle_, int angleToReach_)
+#include "./Eigen/Dense"
+#include <iostream>
+#include "AboutCurrentRobot.h"
+AccelerationDeceleration::AccelerationDeceleration(int currentAngle_, int angleToReach_, int numberOfStepsInOneDegree_)
 {
+    for(int i = 0; i < NUMBER_OF_AXES; i++) {
+        accelerationZone[i] = 0;
+        decelerationZone[i] = 0;
+    }
+    
     initialCurrentAngle = currentAngle_;
     angleToReach = angleToReach_;
     difference = abs(angleToReach - initialCurrentAngle);
     difDivBy3 = difference / 3;
-    numberOfStepsInOneDegree = 6;
+    numberOfStepsInOneDegree = numberOfStepsInOneDegree_;
     if (initialCurrentAngle < angleToReach)
     {
         accelerationZone[0] = initialCurrentAngle;
@@ -44,6 +52,7 @@ int numberOfLoop = 0;
 
 void AccelerationDeceleration::display()
 {
+    std::cout << "initialCurrentAngle= " << initialCurrentAngle << ", angleToReach=" << angleToReach << "\n";
     std::cout << "difference= " << difference << ", z.accelerationZone[0]=" << accelerationZone[0] << ", z.accelerationZone[1]=" << accelerationZone[1] << "\n";
     std::cout << "z.decelerationZone[0]=" << decelerationZone[0] << ", z.decelerationZone[1]=" << decelerationZone[1] << "\n";
 }

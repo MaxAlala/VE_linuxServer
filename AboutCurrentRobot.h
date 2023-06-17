@@ -1,0 +1,1 @@
+enum {NUMBER_OF_AXES = 2};

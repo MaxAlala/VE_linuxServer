@@ -8,7 +8,7 @@ enable_testing()
 # set(CMAKE_CXX_STANDARD 11)
 # set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
 #tcpServer.cpp
-add_executable(server main.cpp PixelToMotorStepsConverter.cpp FaceDetector.cpp RobotSystem.cpp ServerController.cpp MotorController.cpp VoiceController.cpp Eye.cpp FaceDetector.cpp InverseForwardKinematicsModel.cpp Eye.cpp protocol.hpp WebServer.cpp)
+add_executable(server main.cpp AccelerationDeceleration.cpp PixelToMotorStepsConverter.cpp FaceDetector.cpp RobotSystem.cpp ServerController.cpp MotorController.cpp VoiceController.cpp Eye.cpp FaceDetector.cpp InverseForwardKinematicsModel.cpp Eye.cpp protocol.hpp WebServer.cpp)
 target_link_libraries(server -I/usr/include -lwiringPi)
 include_directories(-I/usr/include)
 

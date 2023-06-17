@@ -16,6 +16,7 @@
 #include <fstream>
 #include "ServerController.h"
 #include <vector>
+#include "AccelerationDeceleration.h"
 // axisBorders[0].left = -60;
 // axisBorders[0].right = 300;
 // axisBorders[0].home = 120;
@@ -317,8 +318,7 @@ void MotorController::moveAxisToSpecificAngle1(int angleToReach, bool isTCPclien
     // std::cout << "222 \n";
     int currentAxis = 0;
 
-    AccelerationDeceleration acDec(currentAngle[currentAxis], angleToReach);
-    acDec.display();
+    AccelerationDeceleration acDec(currentAngle[currentAxis], angleToReach, 6);
 
     while ((currentAngle[currentAxis] != angleToReach) && isThereMovementToSpecificAngle[currentAxis])
     {
@@ -350,7 +350,7 @@ void MotorController::moveAxisToSpecificAngle1(int angleToReach, bool isTCPclien
         std::cout << acDec.numberOfLoop << "=numberOfLoop \n";
         std::cout << "currentMicrosec=" << acDec.currentMicrosec << "\n ";
     }
-
+    acDec.display();
     isThereMovementToSpecificAngle[currentAxis] = false;
 
     if (isTCPclient)
@@ -374,43 +374,40 @@ void MotorController::moveAxisToSpecificAngle2(int angleToReach, bool isTCPclien
 
     //     return;
     // }
+    AccelerationDeceleration acDec(currentAngle[currentAxis], angleToReach, 44);
 
-    // std::cout << "333 2\n";
-    isThereMovementToSpecificAngle[currentAxis] = true;
     while ((currentAngle[currentAxis] != angleToReach) && isThereMovementToSpecificAngle[currentAxis])
     {
+        acDec.generateMicrosec(currentAngle[currentAxis]);
         if (currentAngle[currentAxis] < angleToReach)
         {
-            // static int counter = 0;
-            // counter++;
             if (isCcwIncreasesValueOfMagnetEncoder[currentAxis])
             {
-                // if(counter == 1000)
-                // std::cout<< " movingforward1 2nd axis \n";
-                moveAxisCcw2(currentAxis, microseconds[currentAxis]);
+                moveAxisCcw2(currentAxis, acDec.currentMicrosec);
             }
             else
             {
-                // if(counter == 1000)
-                // std::cout<< " movingback1 2nd axis \n";
-                moveAxisCw2(currentAxis, microseconds[currentAxis]);
+                moveAxisCw2(currentAxis, acDec.currentMicrosec);
             }
-            // if(counter == 1000) counter = 0;
         }
         else if (currentAngle[currentAxis] > angleToReach)
         {
             if (isCcwIncreasesValueOfMagnetEncoder[currentAxis])
             {
-                // std::cout<< " movingback2 2nd axis \n";
-                moveAxisCw2(currentAxis, microseconds[currentAxis]);
+                moveAxisCw2(currentAxis, acDec.currentMicrosec);
             }
             else
             {
-                // std::cout<< " movingforward2 2nd axis \n";
-                moveAxisCcw2(currentAxis, microseconds[currentAxis]);
+                moveAxisCcw2(currentAxis, acDec.currentMicrosec);
             }
         }
+
+        acDec.numberOfLoop++;
+        std::cout << acDec.numberOfLoop << "=numberOfLoop \n";
+        std::cout << "currentMicrosec=" << acDec.currentMicrosec << "\n ";
     }
+    acDec.display();
+
     isThereMovementToSpecificAngle[currentAxis] = false;
     ++currentMovementID[currentAxis];
     if (isTCPclient)
