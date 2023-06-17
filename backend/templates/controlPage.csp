@@ -39,47 +39,52 @@
 </head>
 
 <body>
-	<div id="app">
+	<div id="app" class="common-layout">
 		<el-container>
-			<el-header>
+			<el-main>
 				<el-row>
-
 					<el-col :span="8" :xs="24">
 						<el-header style="font-size:30px;">SolarBeam</el-header>
 					</el-col>
+				</el-row>
+				<el-row>
+
 					<!-- background-color="#545c64" -->
 					<!-- active-text-color="#ffd04b" -->
-					<el-col :span="12" :xs="24">
+					<el-col :span="24" :xs="24">
 						<el-menu active="1" default-active="1" class="el-menu-demo" mode="horizontal">
-							<el-menu-item index="1" @click="getControlPage">Control</el-menu-item>
+							<el-menu-item :span="5" :xs="6" index="1" @click="getControlPage">Control</el-menu-item>
 							<!-- <el-sub-menu index="2">
 				<template #title>SolarBeamInfo</template>
 				<el-menu-item index="2-1"><a href="https://github.com/MaxAlala/VE_linuxServer/wiki" target="_blank">Gitter</a></el-menu-item>
 				<el-menu-item index="2-2"><a href="https://github.com/MaxAlala/VE_linuxServer/wiki" target="_blank">GitHub Issues</a></el-menu-item>
 			</el-sub-menu> -->
-							<el-menu-item index="2" @click="getGuidePage">QuickGuide</el-menu-item>
-							<el-menu-item index="3"><a href="https://github.com/MaxAlala/VE_linuxServer/wiki" target="_blank">Documentation</a></el-menu-item>
+							<el-menu-item :span="5" :xs="6" index="2" @click="getGuidePage">QuickGuide</el-menu-item>
+							<el-menu-item :span="5" :xs="6" index="3"><a
+									href="https://github.com/MaxAlala/VE_linuxServer/wiki"
+									target="_blank">Documentation</a></el-menu-item>
 							<div class="line"></div>
 						</el-menu>
 					</el-col>
 
 				</el-row>
-			</el-header>
+				<el-row>
+					<div class="exclusive-line">
+						<h2>control section</h2>
+					</div>
+				</el-row>
 
-			<div class="exclusive-line">
-				<h2>control section</h2>
-			</div>
-			<div >
 
-				<el-main>
 
-					<!-- <el-row> -->
 
+				<!-- <el-row> -->
+				<section class="features_secion">
 					<!-- </el-row> -->
 					<el-row class="row-bg" justify="space-evenly">
 						<!-- <el-footer>Footer</el-footer> -->
 						<el-col :span="8" :xs="24">
-							<div id=isOnline style="color:rgb(76, 212, 22);" class="grid-content ep-bg-purple">Offline</div>
+							<div id=isOnline style="color:rgb(76, 212, 22);" class="grid-content ep-bg-purple">Offline
+							</div>
 
 							<!-- <a href="https://github.com/drogonframework/drogon"><img class="shrink-img-to-fit logo-image"src="/images/drogon-concise-white.png"></a> -->
 							<!-- <a href="https://github.com/MaxAlala/VE_linuxServer/wiki"><img
@@ -110,21 +115,13 @@
 						</el-col>
 						<el-col :span="8" :xs="24">
 							<div class="grid-content ep-bg-purple">
-								<el-button color="#626aef" :dark="isDark" plain
-									onclick=" window.open('https://github.com/MaxAlala/VE_linuxServer/wiki','_blank')">turn
-									off audio</el-button>
+								<el-button id="faceWasDetected" color="#626aef" :dark="isDark" plain
+									@click="acceptDetectedFace"></el-button>
 							</div>
 						</el-col>
 
 					</el-row>
-
-				</el-main>
-			</div>
-
-			<!-- <el-row class="main-page-slide">
-
-			</el-row> -->
-			<el-main>
+				</section>
 				<section class="features_secion">
 					<div class="exclusive-line">
 						<h2>Features</h2>
@@ -290,4 +287,5 @@ app().registerHandler("/", [](const HttpRequestPtr& req, Callback &&callback)
 
 
 </body>
+
 </html>

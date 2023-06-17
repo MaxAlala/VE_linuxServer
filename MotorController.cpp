@@ -347,8 +347,8 @@ void MotorController::moveAxisToSpecificAngle1(int angleToReach, bool isTCPclien
         }
 
         acDec.numberOfLoop++;
-        std::cout << acDec.numberOfLoop << "=numberOfLoop \n";
-        std::cout << "currentMicrosec=" << acDec.currentMicrosec << "\n ";
+        // std::cout << acDec.numberOfLoop << "=numberOfLoop \n";
+        // std::cout << "currentMicrosec=" << acDec.currentMicrosec << "\n ";
     }
     acDec.display();
     isThereMovementToSpecificAngle[currentAxis] = false;
@@ -403,8 +403,8 @@ void MotorController::moveAxisToSpecificAngle2(int angleToReach, bool isTCPclien
         }
 
         acDec.numberOfLoop++;
-        std::cout << acDec.numberOfLoop << "=numberOfLoop \n";
-        std::cout << "currentMicrosec=" << acDec.currentMicrosec << "\n ";
+        // std::cout << acDec.numberOfLoop << "=numberOfLoop \n";
+        // std::cout << "currentMicrosec=" << acDec.currentMicrosec << "\n ";
     }
     acDec.display();
 

@@ -100,7 +100,7 @@ int AccelerationDeceleration::getSpeedtimeForAccelerationZone(int i, int stepsNu
 
     int returnSpeedTime = timeOfslowestSpeed * sin(curRad);
 
-    std::cout << "getAccel" << i << " " << curRad << " " << sin(curRad) << " " << returnSpeedTime << std::endl;
+    // std::cout << "getAccel" << i << " " << curRad << " " << sin(curRad) << " " << returnSpeedTime << std::endl;
 
     return returnSpeedTime;
 }
@@ -136,7 +136,7 @@ int AccelerationDeceleration::getSpeedtimeForDecelerationZone(int i, int stepsNu
 
     int returnSpeedTime = timeOfslowestSpeed * sin(curRad);
 
-    std::cout << "getDec" << i << " " << curRad << " " << sin(curRad) << " " << returnSpeedTime << std::endl;
+    // std::cout << "getDec" << i << " " << curRad << " " << sin(curRad) << " " << returnSpeedTime << std::endl;
 
     return returnSpeedTime;
 }

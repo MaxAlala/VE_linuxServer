@@ -63,6 +63,8 @@ public:
     cv::Point currentDetectedFace;
     bool isFaceDetected();
     FaceDetector faceDetector;
+    void saveCurrentFrame();
+    cv::Mat getCurrentFrame();
 private:
     //std::unique_ptr<MovementDetector> movementDetector;
     bool shouldTurnOffCam;

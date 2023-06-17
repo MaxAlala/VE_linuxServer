@@ -225,6 +225,8 @@ void RobotSystem::startLifeFunc()
 									std::cout << " detectedFaces.size()=" << visionController->faceDetector.detectedFaces.size() << std::endl;
 									std::cout << " detectedFace.faceConfidence=" << detectedFace.faceConfidence << std::endl;
 
+									Eigen::Vector3d obstacleCoordinate = visionController->calculateObstacleCoordinate();
+									// visionController->saveImage();
 									std::vector<int> angles{0, 0};
 									pixelToMotorStepsConverter->calculateAnglesUsingLogic(detectedFace.faceCoordinate, angles[0], angles[1]);
 									std::cout << "angles[0]=" << angles[0] << ", angles[1]=" << angles[1] << std::endl;
@@ -851,6 +853,10 @@ void RobotSystem::startRobotSystem()
 	if (isVisionOn)
 		startLifeFunc();
 	shared_cout(" STart1.11111 \n");
+}
+
+void saveDetectedFaceToDb(cv::Mat detectedFace){
+
 }
 
 int RobotSystem::isPatrolOn = 0;

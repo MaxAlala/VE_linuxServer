@@ -409,3 +409,10 @@ Eye::Eye(const Eye& orig) {
 Eye::~Eye() {
 }
 
+void Eye::saveCurrentFrame() {
+
+}
+
+cv::Mat Eye::getCurrentFrame() {
+    return frame;
+}

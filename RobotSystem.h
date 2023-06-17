@@ -7,6 +7,7 @@
 #include "PixelToMotorStepsConverter.h"
 #include "WebServer.h"
 #include <string>
+#include "opencv2/core.hpp"
 class RobotSystem {
     
     enum class States {
@@ -35,6 +36,7 @@ void startLidarDistanceDetection();
 void startUpdateTimeOfLifeEveryMinuteThread();
 void startUpdateTimeOfLifeEveryMinute();
 void sendStartingTime();
+void saveDetectedFaceToDb(cv::Mat detectedFace);
 int timeOfbeingOnline;
 std::string timeOfStartUTC; 
 std::shared_ptr<MotorController> motorController;
