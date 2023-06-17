@@ -43,8 +43,7 @@ void move_motor2(int led, unsigned int time, int numberOfSteps);
 bool checkIfRobotIsAtHome();
 bool isValidAngle(int angleToReach, int axis);
 bool isThereMovement();
-int getSpeedtimeForDecelerationZone(int i, int stepsNum);
-int getSpeedtimeForAccelerationZone(int i, int stepsNum);
+
 	// c m 70 999
 	// if currentAngle==receivedAngle
 	// sends finished command if receives the same command
