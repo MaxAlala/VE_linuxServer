@@ -238,7 +238,7 @@ void InverseForwardKinematicsModel::calculateDH(std::vector<int> &thetas)
     // std::cout << "DH4_3 \n" << DH[3] << "\n";
 
     DH_4_0 = DH[0] * DH[1] * DH[2] * DH[3];
-    // std::cout << " DH_4_0 == \n " << DH_4_0 << std::endl;
+    std::cout << " DH_4_0 == \n " << DH_4_0 << std::endl;
 
     // camera coordinate system = DH3_2 in plate coordinate system DH2_1
     // Eigen::Matrix<double, 4, 4> DH3_2;

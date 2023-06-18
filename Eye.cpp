@@ -106,12 +106,12 @@ void Eye::setCurrentLidarDistance(std::string str) {
 }
 
 double Eye::getCurrentLidarDistance() {
-    //std::stringstream ss;
-    //ss << distanceToTheCentralPixel;
-    //double distance = 0;
-    //ss >> distance;
-    //std::cout << "current lidar distance is " << distance << std::endl;
-    return 0;
+    std::stringstream ss;
+    ss << lidarDistance;
+    double distance = 0;
+    ss >> distance;
+    // std::cout << "current lidar distance is " << distance << std::endl;
+    return distance;
 }
 
 Eigen::Vector3d Eye::calculateObstacleCoordinate() {
@@ -121,7 +121,7 @@ Eigen::Vector3d Eye::calculateObstacleCoordinate() {
     DH_4_0 = inverseForwardKinematicsModel->getDH4_0();
 
     double lidarDistance = getCurrentLidarDistance();
-
+    
     Eigen::Matrix<double, 3, 3 > R_4_0;
     
     R_4_0 <<
@@ -133,6 +133,10 @@ Eigen::Vector3d Eye::calculateObstacleCoordinate() {
 
     //point In Forth Coordinate System transoformed in point in 0 coordinate system
     Eigen::Vector3d p4 = {0, 0, lidarDistance};
+
+    std::cout << "Obstacle in cam coordSys=" << p4.x() << " " << p4.y() << " " << p4.z() << std::endl;
+    std::cout << "forthOriginIn0=" << forthOriginIn0.x() << " " << forthOriginIn0.y() << " " << forthOriginIn0.z() << std::endl;
+    
     // point in first coordinate system
     Eigen::Vector3d p0 = R_4_0 * p4 + forthOriginIn0;
     std::cout << "calculated obstacle in 0 cs = " << p0.x() << " " << p0.y() << " " << p0.z() << std::endl;

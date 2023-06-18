@@ -13,7 +13,6 @@ function setOfflineOrOnline(isOnl) {
     }
 
 };
-
 const App = {
     data() {
         return {
@@ -25,19 +24,6 @@ const App = {
         };
     },
     methods: {
-
-        togglePatrol() {
-            axios.post('/togglePatrol?togglePatrol=' + !isPatrolOn)
-                .then(function (response) {
-                    console.log(response);
-                    console.log("/togglePatrol?togglePatrol=" + !isPatrolOn);
-
-                })
-                .catch(function (error) {
-                    console.log(error);
-                });
-        },
-
         getTimeOfBeingOnline() {
             // console.log(`Hello world!`);
             axios.get('/getTimeOfBeingOnline')
@@ -72,7 +58,6 @@ const App = {
                     // always executed
                 });
         },
-
         getTimeOfStartUtc() {
             // console.log(`Hello world!`);
             axios.get('/getTimeOfStart')
@@ -104,6 +89,61 @@ const App = {
                     // always executed
                 });
         },
+        toggleSpotPatrol() {
+            axios.post('/toggleSpotPatrol?toggleSpotPatrol=' + !isSpotPatrolOn)
+                .then(function (response) {
+                    console.log(response);
+                    console.log("/togglePatrol?togglePatrol=" + !isSpotPatrolOn);
+
+                })
+                .catch(function (error) {
+                    console.log(error);
+                });
+        },
+
+        getSpotPatrol() {
+            // console.log(`Hello world!`);
+            axios.get('/getSpotPatrol')
+                .then(function (response) {
+                    // handle success
+                    console.log(response);
+                    isSpotPatrolOn = response.data['isSpotPatrolOn'];
+                    console.log('isSpotPatrolOn=' + isSpotPatrolOn);
+
+                    let id = "spotPatrolButton";
+                    // function changeValue(id, newText) {
+                    var el = document.getElementById(id);
+
+                    if (isSpotPatrolOn == true)
+                        el.innerHTML = "stop spot patrol";  // change the displayed text on the screen
+                    else if (isSpotPatrolOn == false)
+                        el.innerHTML = "start spot patrol";
+
+                    // el.value     = newText;  // change the value passed to the next page
+
+                    // return false;
+                    // }
+                })
+                .catch(function (error) {
+                    // handle error
+                    console.log(error);
+                })
+                .finally(function () {
+                    // always executed
+                });
+        },
+
+        togglePatrol() {
+            axios.post('/togglePatrol?togglePatrol=' + !isPatrolOn)
+                .then(function (response) {
+                    console.log(response);
+                    console.log("/togglePatrol?togglePatrol=" + !isPatrolOn);
+
+                })
+                .catch(function (error) {
+                    console.log(error);
+                });
+        },
 
         getCurrentPatrol() {
             // console.log(`Hello world!`);
@@ -119,9 +159,9 @@ const App = {
                     var el = document.getElementById(id);
 
                     if (isPatrolOn == true)
-                        el.innerHTML = "stop patroling";  // change the displayed text on the screen
+                        el.innerHTML = "stop patrol";  // change the displayed text on the screen
                     else if (isPatrolOn == false)
-                        el.innerHTML = "start patroling";
+                        el.innerHTML = "start patrol";
 
                     // el.value     = newText;  // change the value passed to the next page
 
@@ -181,7 +221,7 @@ app.mount("#app");
 //     App.methods.getCurrentPatrol();
 //     console.log(`Hello world!`);
 // };
-
+setInterval(App.methods.getSpotPatrol, 1000);
 setInterval(App.methods.getCurrentPatrol, 1000);
 setInterval(App.methods.getTimeOfBeingOnline, 1000);
 setInterval(App.methods.getTimeOfStartUtc, 1000);

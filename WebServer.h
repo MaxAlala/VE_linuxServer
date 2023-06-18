@@ -16,12 +16,15 @@ public:
     ADD_METHOD_TO(WebServer::getPatrol, "/getPatrol", {Get});
     ADD_METHOD_TO(WebServer::getTimeOfStart, "/getTimeOfStart", {Get});
     ADD_METHOD_TO(WebServer::getTimeOfBeingOnline, "/getTimeOfBeingOnline", {Get});
+    ADD_METHOD_TO(WebServer::toggleSpotPatrol, "/toggleSpotPatrol?toggleSpotPatrol={1}", {Post});
+    ADD_METHOD_TO(WebServer::getSpotPatrol, "/getSpotPatrol", {Get});
 
     METHOD_LIST_END
 
     WebServer();
     static void startWebServer();
     static bool isPatrolOn;
+    static bool isSpotPatrolOn;
     static int timeOfbeingOnline;
     static std::string timeOfStartUTC;
     static std::string webServerIpAddr;
@@ -74,6 +77,31 @@ static int& getTimeOfbeingOnline() {
         resp->setStatusCode(k200OK);
         callback(resp);
     }
+
+    void getSpotPatrol(const HttpRequestPtr &req,
+                   std::function<void(const HttpResponsePtr &)> &&callback)
+    //   const std::string &password)
+    {
+        LOG_DEBUG << "getSpotPatrol() "
+                  << " \n";
+        // std::cout << "getPatrol: "
+        //           << " \n";
+        Json::Value patrolVal;
+        patrolVal["isSpotPatrolOn"] = isSpotPatrolOn;
+
+        // Authentication algorithm, read database, verify, identify, etc...
+        //...
+        //  Json::Value ret;
+        //  ret["result"]="ok";
+        //  ret["token"]=drogon::utils::getUuid();
+        auto resp = HttpResponse::newHttpJsonResponse(patrolVal);
+        resp->setStatusCode(k200OK);
+        callback(resp);
+    }
+
+    void toggleSpotPatrol(const HttpRequestPtr &req,
+                      std::function<void(const HttpResponsePtr &)> &&callback,
+                      std::string &&toggleSpotPatrol);
 
     void getPatrol(const HttpRequestPtr &req,
                    std::function<void(const HttpResponsePtr &)> &&callback)

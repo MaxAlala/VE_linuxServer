@@ -109,10 +109,18 @@
 						<el-col :span="8" :xs="24">
 							<div class="grid-content ep-bg-purple">
 								<el-button id="patrolButton" color="#626aef" :dark="isDark" plain
-									@click="togglePatrol"></el-button>
+									@click="togglePatrol">patrolButton</el-button>
 							</div>
 
 						</el-col>
+						<el-col :span="8" :xs="24">
+							<div class="grid-content ep-bg-purple">
+								<el-button id="spotPatrolButton" color="#626aef" :dark="isDark" plain
+									@click="toggleSpotPatrol">spotPatrolButton</el-button>
+							</div>
+
+						</el-col>
+
 						<el-col :span="8" :xs="24">
 							<div class="grid-content ep-bg-purple">
 								<el-button id="faceWasDetected" color="#626aef" :dark="isDark" plain

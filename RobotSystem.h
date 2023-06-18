@@ -8,6 +8,7 @@
 #include "WebServer.h"
 #include <string>
 #include "opencv2/core.hpp"
+#include "./Eigen/Dense"
 class RobotSystem {
     
     enum class States {
@@ -36,7 +37,15 @@ void startLidarDistanceDetection();
 void startUpdateTimeOfLifeEveryMinuteThread();
 void startUpdateTimeOfLifeEveryMinute();
 void sendStartingTime();
-void saveDetectedFaceToDb(cv::Mat detectedFace);
+void saveDetectedFaceToDb(cv::Mat detectedFace, Eigen::Vector3d coordinateOfDetectedFace);
+void startUpdateDetectedFaceFlagThread();
+void startUpdateDetectedFaceFlag();
+static void setIsPatrolOn(bool isPatrolOnToSet) {
+    isPatrolOn = isPatrolOnToSet;
+}
+static void setIsSpotPatrolOn(bool isSpotPatrolOnToSet) {
+    isSpotPatrolOn = isSpotPatrolOnToSet;
+}
 int timeOfbeingOnline;
 std::string timeOfStartUTC; 
 std::shared_ptr<MotorController> motorController;
@@ -50,15 +59,13 @@ drogon::orm::DbClientPtr db;
 bool isVisionOn = false;
 uint16_t currentLidarDistance = 0;
 int turretID = 1;
-
-static void setIsPatrolOn(bool isPatrolOnToSet) {
-    isPatrolOn = isPatrolOnToSet;
-}
+bool canItSaveDetectedFace;
 
 private:
   States currentState;
   CurrentRoboticSystem currentRoboticSystem;
-  static int isPatrolOn;
+  static bool isPatrolOn;
+static bool isSpotPatrolOn;
   bool wasPatrolThreadStarted = false;
 };
 

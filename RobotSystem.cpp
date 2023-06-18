@@ -4,6 +4,8 @@
 #include "FaceDetector.h"
 #include "serialController.h"
 #include "WebServer.h"
+#include "./Eigen/Dense"
+#include "opencv2/core.hpp"
 // #include <Eigen/Dense>
 void shared_cout(std::string msg);
 RobotSystem::~RobotSystem()
@@ -13,6 +15,7 @@ RobotSystem::~RobotSystem()
 
 RobotSystem::RobotSystem()
 {
+	canItSaveDetectedFace = true;
 	inverseForwardKinematicsModel = std::make_shared<InverseForwardKinematicsModel>();
 	std::cout << "RobotSystem count" << inverseForwardKinematicsModel.use_count() << "\n";
 
@@ -197,19 +200,17 @@ void RobotSystem::startLifeFunc()
 				voiceController->sayGreetings();
 			}
 
-			//// d || D
-			if (k == 68 || k == 100)
+			if (isSpotPatrolOn)
 			{
-				static bool isFaceDetectionRunning = false;
+				static bool isFaceDetectionThreadWasStarted = false;
 
-				isFaceDetectionRunning = !isFaceDetectionRunning;
-
-				if (isFaceDetectionRunning)
+				if (!isFaceDetectionThreadWasStarted)
 				{
+					isFaceDetectionThreadWasStarted = true;
 					auto autohoming0 = [this]()
 					{
 						visionController->faceDetector.startUpdatingFaces();
-						while (isFaceDetectionRunning)
+						while (isSpotPatrolOn)
 						{
 
 							std::cout << "FaceDetectionProcess \n";
@@ -225,7 +226,11 @@ void RobotSystem::startLifeFunc()
 									std::cout << " detectedFaces.size()=" << visionController->faceDetector.detectedFaces.size() << std::endl;
 									std::cout << " detectedFace.faceConfidence=" << detectedFace.faceConfidence << std::endl;
 
-									Eigen::Vector3d obstacleCoordinate = visionController->calculateObstacleCoordinate();
+									Eigen::Vector3d coordinateOfDetectedFace = visionController->calculateObstacleCoordinate();
+									// std::cout << "coordinateOfDetectedFace xyz= " << coordinateOfDetectedFace.x() << " " << coordinateOfDetectedFace.y() << " " << coordinateOfDetectedFace.z() << "\n";
+
+									saveDetectedFaceToDb(visionController->getCurrentFrame(), coordinateOfDetectedFace);
+
 									// visionController->saveImage();
 									std::vector<int> angles{0, 0};
 									pixelToMotorStepsConverter->calculateAnglesUsingLogic(detectedFace.faceCoordinate, angles[0], angles[1]);
@@ -241,6 +246,7 @@ void RobotSystem::startLifeFunc()
 							std::this_thread::sleep_for(std::chrono::milliseconds(400));
 						}
 						visionController->faceDetector.stopUpdatingFaces();
+						isFaceDetectionThreadWasStarted = false;
 					};
 
 					std::thread thread_(autohoming0);
@@ -371,9 +377,9 @@ void RobotSystem::startLifeFunc()
 						while (isPatrolOn == 1)
 						{
 							// std::cout << "w123 \n";
-							// std::cout << "t3 \n";
-							if (motorController->isThereMovement())
-								continue;
+							std::cout << "p1 \n";
+							// if (motorController->isThereMovement())
+							// 	continue;
 
 							if (!shouldSkipOneLoop)
 							{
@@ -384,6 +390,7 @@ void RobotSystem::startLifeFunc()
 											  (int)inverseForwardKinematicsModel->inverseKinematicsCalculatedAngles.at(1) != (int)inverseForwardKinematicsModel->getThetasWhereStartIsZero().at(1)))
 									{
 										// stepperMotorController->setMovementCommand(angles, false);
+										std::cout << "p2 \n";
 										motorController->turretMoveAxesToSomeAngle(false, angles);
 										// static int dispcounter = 0;
 										// if (dispcounter == 9999999) {
@@ -429,6 +436,9 @@ void RobotSystem::startLifeFunc()
 
 							int maxAngle = 360;
 							int numberOfPoints = 20;
+							// 360/20 = 18 degree for one move
+							// scans the circle
+							//
 							int radius = 100;
 							int angleInOneStep = maxAngle / numberOfPoints; // 20 degrees per step
 							int x = 0;
@@ -459,6 +469,7 @@ void RobotSystem::startLifeFunc()
 							// now eye directed to point
 							// inverseForwardKinematicsModel->calculateDH(inverseForwardKinematicsModel->getCalculationThetas());
 
+							// limit the rotation of the axis otherwise it will collide with the body
 							if (inverseForwardKinematicsModel->inverseKinematicsCalculatedAngles.at(0) > 140 ||
 								inverseForwardKinematicsModel->inverseKinematicsCalculatedAngles.at(0) < -140)
 							{
@@ -468,7 +479,7 @@ void RobotSystem::startLifeFunc()
 							}
 
 							if (inverseForwardKinematicsModel->inverseKinematicsCalculatedAngles.at(1) > 140 ||
-								inverseForwardKinematicsModel->inverseKinematicsCalculatedAngles.at(1) < -140)
+								inverseForwardKinematicsModel->inverseKinematicsCalculatedAngles.at(1) < -60)
 							{
 								shouldSkipOneLoop = true;
 								++ic;
@@ -507,16 +518,17 @@ void RobotSystem::startLifeFunc()
 
 							// stepperMotorController->setMovementCommand(angles, false);
 							motorController->turretMoveAxesToSomeAngle(false, angles);
-						
-							std::this_thread::sleep_for(std::chrono::milliseconds(200));	
+
+							std::this_thread::sleep_for(std::chrono::milliseconds(200));
 							while (motorController->isThereMovement())
 							{
+								// std::cout << "p3 \n";
 								std::this_thread::sleep_for(std::chrono::milliseconds(200));
 							}
 
 							//////////////////////////////////////
 							startFaceDetectionForOneSec();
-
+							std::cout << "p4 \n";
 							//////////////////////////////////////
 							std::this_thread::sleep_for(std::chrono::milliseconds(200));
 							if (ic == (numberOfPoints + 1))
@@ -771,6 +783,24 @@ void RobotSystem::startUpdateTimeOfLifeEveryMinute()
 	}
 }
 
+void RobotSystem::startUpdateDetectedFaceFlagThread()
+{
+	std::thread thread_(&RobotSystem::startUpdateDetectedFaceFlag, this);
+	thread_.detach();
+}
+
+void RobotSystem::startUpdateDetectedFaceFlag()
+{
+	while (true)
+	{
+		while (canItSaveDetectedFace == true)
+			std::this_thread::sleep_for(600ms); // this function holds the foo execution for 60 sec
+
+		std::this_thread::sleep_for(30s); // this function holds the foo execution for 60 sec
+		canItSaveDetectedFace = true;
+	}
+}
+
 void RobotSystem::startUpdateTimeOfLifeEveryMinuteThread()
 {
 	std::thread thread_(&RobotSystem::startUpdateTimeOfLifeEveryMinute, this);
@@ -855,8 +885,32 @@ void RobotSystem::startRobotSystem()
 	shared_cout(" STart1.11111 \n");
 }
 
-void saveDetectedFaceToDb(cv::Mat detectedFace){
+void RobotSystem::saveDetectedFaceToDb(cv::Mat detectedFace, Eigen::Vector3d coordinateOfDetectedFace)
+{
+	if (canItSaveDetectedFace)
+	{
+		std::string timeOfDetectedFace;
+		db->execSqlAsync(
+			"select current_timestamp(0);",
+			[this, &timeOfDetectedFace](const drogon::orm::Result &result)
+			{
+				std::cout << result.size() << " rows selected!" << std::endl;
+				int i = 0;
+				for (auto row : result)
+				{
+					timeOfDetectedFace = row["current_timestamp"].as<std::string>();
+					std::cout << i++ << ": timeOfDetectedFace is " << timeOfDetectedFace << std::endl;
+				}
+			},
+			[](const drogon::orm::DrogonDbException &e)
+			{
+				std::cerr << "error:" << e.base().what() << std::endl;
+			});
 
+		cv::imwrite("detectedHuman/" + timeOfDetectedFace + ".png", detectedFace);
+	}
+	canItSaveDetectedFace = false;
 }
 
-int RobotSystem::isPatrolOn = 0;
+bool RobotSystem::isPatrolOn = 0;
+bool RobotSystem::isSpotPatrolOn = 0;

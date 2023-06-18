@@ -5,6 +5,38 @@ using namespace drogon;
 #include <string>
 #include "RobotSystem.h"
 
+void WebServer::toggleSpotPatrol(const HttpRequestPtr &req,
+                      std::function<void(const HttpResponsePtr &)> &&callback,
+                      std::string &&toggleSpotPatrol)
+    //   const std::string &password)
+    {
+        LOG_DEBUG << "toggleSpotPatrol: " << toggleSpotPatrol << " \n";
+        // std::cout << "shouldPatrolBeRunning: " << togglePatrol << " \n";
+
+        if (!strcmp(toggleSpotPatrol.c_str(), "true"))
+        {
+
+            isSpotPatrolOn = true;
+            std::cout << "toggleSpotPatrol.c_str() == true"
+                      << " \n";
+        }
+        else if (!strcmp(toggleSpotPatrol.c_str(), "false"))
+        {
+            std::cout << "toggleSpotPatrol.c_str() == false"
+                      << " \n";
+            isSpotPatrolOn = false;
+        }
+        // Authentication algorithm, read database, verify, identify, etc...
+        //...
+        RobotSystem::setIsSpotPatrolOn(isSpotPatrolOn);
+        Json::Value ret;
+        //  ret["result"]="ok";
+        //  ret["token"]=drogon::utils::getUuid();
+        auto resp = HttpResponse::newHttpResponse();
+        resp->setStatusCode(k200OK);
+        callback(resp);
+    }
+
 void WebServer::togglePatrol(const HttpRequestPtr &req,
                       std::function<void(const HttpResponsePtr &)> &&callback,
                       std::string &&togglePatrol)
@@ -40,6 +72,7 @@ void WebServer::togglePatrol(const HttpRequestPtr &req,
 WebServer::WebServer()
 {
     isPatrolOn = false;
+    isSpotPatrolOn = false;
     timeOfbeingOnline = 1;
     // host=localhost port=5432 dbname=SolarBeam connect_timeout=10 user='pi' password=''
     //  std::string connInfo = "host=localhost port=5432 dbname=solarbeam connect_timeout=10 user=pi password=\'1qaz2ws3E4\'";
@@ -232,6 +265,7 @@ void WebServer::startWebServer()
 }
 std::string WebServer::webServerIpAddr = "192.168.1.15";
 bool WebServer::isPatrolOn;
+bool WebServer::isSpotPatrolOn;
 int WebServer::timeOfbeingOnline;
 std::string WebServer::timeOfStartUTC;
 
