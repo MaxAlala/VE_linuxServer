@@ -6,6 +6,7 @@
 #include "WebServer.h"
 #include "./Eigen/Dense"
 #include "opencv2/core.hpp"
+#include <json.hpp>
 // #include <Eigen/Dense>
 void shared_cout(std::string msg);
 RobotSystem::~RobotSystem()
@@ -213,7 +214,7 @@ void RobotSystem::startLifeFunc()
 						while (isSpotPatrolOn)
 						{
 
-							std::cout << "FaceDetectionProcess \n";
+							// std::cout << "FaceDetectionProcess \n";
 							if (visionController->isFaceDetected())
 							{
 								DetectedFaceAndConfidence detectedFace = visionController->faceDetector.currentDetectedFace;
@@ -222,9 +223,9 @@ void RobotSystem::startLifeFunc()
 								if (detectedFace.faceConfidence > threshold)
 								{
 									// std::cout << " eye.get()->isFaceDetected()=" << eye.get()->isFaceDetected() << std::endl;
-									std::cout << " face xy=" << detectedFace.faceCoordinate.x << " " << detectedFace.faceCoordinate.y << std::endl;
-									std::cout << " detectedFaces.size()=" << visionController->faceDetector.detectedFaces.size() << std::endl;
-									std::cout << " detectedFace.faceConfidence=" << detectedFace.faceConfidence << std::endl;
+									// std::cout << " face xy=" << detectedFace.faceCoordinate.x << " " << detectedFace.faceCoordinate.y << std::endl;
+									// std::cout << " detectedFaces.size()=" << visionController->faceDetector.detectedFaces.size() << std::endl;
+									// std::cout << " detectedFace.faceConfidence=" << detectedFace.faceConfidence << std::endl;
 
 									Eigen::Vector3d coordinateOfDetectedFace = visionController->calculateObstacleCoordinate();
 									// std::cout << "coordinateOfDetectedFace xyz= " << coordinateOfDetectedFace.x() << " " << coordinateOfDetectedFace.y() << " " << coordinateOfDetectedFace.z() << "\n";
@@ -796,7 +797,7 @@ void RobotSystem::startUpdateDetectedFaceFlag()
 		while (canItSaveDetectedFace == true)
 			std::this_thread::sleep_for(600ms); // this function holds the foo execution for 60 sec
 
-		std::this_thread::sleep_for(30s); // this function holds the foo execution for 60 sec
+		std::this_thread::sleep_for(10s); // this function holds the foo execution for 60 sec
 		canItSaveDetectedFace = true;
 	}
 }
@@ -878,6 +879,7 @@ void RobotSystem::startRobotSystem()
 	startUpdateTimeOfLifeEveryMinuteThread();
 	shared_cout(" STart1.11117 \n");
 	sendStartingTime();
+	startUpdateDetectedFaceFlagThread();
 	// start
 	shared_cout(" STart1.11118 \n");
 	if (isVisionOn)
@@ -887,12 +889,13 @@ void RobotSystem::startRobotSystem()
 
 void RobotSystem::saveDetectedFaceToDb(cv::Mat detectedFace, Eigen::Vector3d coordinateOfDetectedFace)
 {
+	bool wasTimeReceived = false;
 	if (canItSaveDetectedFace)
 	{
-		std::string timeOfDetectedFace;
+		std::string timeOfDetectedFace = "0:0:0";
 		db->execSqlAsync(
 			"select current_timestamp(0);",
-			[this, &timeOfDetectedFace](const drogon::orm::Result &result)
+			[this, &timeOfDetectedFace, &wasTimeReceived](const drogon::orm::Result &result)
 			{
 				std::cout << result.size() << " rows selected!" << std::endl;
 				int i = 0;
@@ -901,15 +904,41 @@ void RobotSystem::saveDetectedFaceToDb(cv::Mat detectedFace, Eigen::Vector3d coo
 					timeOfDetectedFace = row["current_timestamp"].as<std::string>();
 					std::cout << i++ << ": timeOfDetectedFace is " << timeOfDetectedFace << std::endl;
 				}
+				wasTimeReceived = true;
 			},
 			[](const drogon::orm::DrogonDbException &e)
 			{
 				std::cerr << "error:" << e.base().what() << std::endl;
 			});
 
-		cv::imwrite("detectedHuman/" + timeOfDetectedFace + ".png", detectedFace);
+		std::this_thread::sleep_for(400ms);
+
+		if (wasTimeReceived == true)
+		{
+			cv::imwrite("../detectedHuman/" + timeOfDetectedFace + ".png", detectedFace);
+			canItSaveDetectedFace = false;
+			Json::Value coordinateOfFace_js;
+			coordinateOfFace_js["x"] = coordinateOfDetectedFace.x();
+			coordinateOfFace_js["y"] = coordinateOfDetectedFace.y();
+			coordinateOfFace_js["z"] = coordinateOfDetectedFace.z();
+
+			// std::cout << " currentStartTimeUTC= " << currentStartTimeUTC << "\n";
+			std::string psqlInsertRequest = "INSERT INTO DetectedFace VALUES (1, \'" + timeOfDetectedFace + "\', \'" + "{\"x\":" 
+			+ std::to_string(coordinateOfFace_js["x"].asDouble()) + ", \"y\":" + std::to_string(coordinateOfFace_js["y"].asDouble()) + ", \"z\":" + std::to_string(coordinateOfFace_js["z"].asDouble()) + "}\'," + "false" + ");";
+			// std::cout << "psqlInsertRequest=" << psqlInsertRequest << std::endl;
+			std::cout << psqlInsertRequest << "\n";
+			db->execSqlAsync(
+				psqlInsertRequest,
+				[](const drogon::orm::Result &result)
+				{
+					std::cout << "detected face was sent to DB. \n";
+				},
+				[](const drogon::orm::DrogonDbException &e)
+				{
+					std::cerr << "error:" << e.base().what() << std::endl;
+				});
+		}
 	}
-	canItSaveDetectedFace = false;
 }
 
 bool RobotSystem::isPatrolOn = 0;

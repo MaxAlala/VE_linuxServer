@@ -40,8 +40,8 @@ public:
             }
         }
 
-        std::cout << "biggest i=" << faceWithBiggestConfidence << ", detectedFace  x y confidence ="
-            << detectedFaces.at(faceWithBiggestConfidence).faceCoordinate.x << " " << detectedFaces.at(faceWithBiggestConfidence).faceCoordinate.y << " " << detectedFaces.at(faceWithBiggestConfidence).faceConfidence << std::endl;
+        // std::cout << "biggest i=" << faceWithBiggestConfidence << ", detectedFace  x y confidence ="
+            // << detectedFaces.at(faceWithBiggestConfidence).faceCoordinate.x << " " << detectedFaces.at(faceWithBiggestConfidence).faceCoordinate.y << " " << detectedFaces.at(faceWithBiggestConfidence).faceConfidence << std::endl;
 
         return detectedFaces.at(faceWithBiggestConfidence);
     }
@@ -54,9 +54,9 @@ public:
         for (int i = 0; i < detectedFaces.size(); ++i) {
             if (abs(detectedFaces.at(i).faceCoordinate.x - faceToProccess.x) <= x_dif &&
                 abs(detectedFaces.at(i).faceCoordinate.y - faceToProccess.y) <= y_dif) {
-                std::cout << " increase face conf to i=" << i << "\n";
+                // std::cout << " increase face conf to i=" << i << "\n";
                 ++(detectedFaces.at(i).faceConfidence);
-                std::cout << "conf is =" << detectedFaces.at(i).faceConfidence << "\n";
+                // std::cout << "conf is =" << detectedFaces.at(i).faceConfidence << "\n";
 
                 return;
             }

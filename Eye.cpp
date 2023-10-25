@@ -135,7 +135,7 @@ Eigen::Vector3d Eye::calculateObstacleCoordinate() {
     Eigen::Vector3d p4 = {0, 0, lidarDistance};
 
     std::cout << "Obstacle in cam coordSys=" << p4.x() << " " << p4.y() << " " << p4.z() << std::endl;
-    std::cout << "forthOriginIn0=" << forthOriginIn0.x() << " " << forthOriginIn0.y() << " " << forthOriginIn0.z() << std::endl;
+    // std::cout << "forthOriginIn0=" << forthOriginIn0.x() << " " << forthOriginIn0.y() << " " << forthOriginIn0.z() << std::endl;
     
     // point in first coordinate system
     Eigen::Vector3d p0 = R_4_0 * p4 + forthOriginIn0;
